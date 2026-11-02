@@ -416,7 +416,7 @@ private fun SetupScreen(s: LauncherState) {
                     Mono("appops set com.eymen.os SYSTEM_ALERT_WINDOW allow")
                     Mono("settings put secure enabled_accessibility_services com.eymen.os/.EnforcerService")
                 }
-                T("Komutların başına \"adb shell\" yaz. eski ana ekran silinmez; listeden \"eski ana ekranna dön\" ile geçilir.", 12, C.Mut, 500, maxLines = 3, lineHeight = 17)
+                T("Komutların başına \"adb shell\" yaz. eski ana ekran silinmez; listeden \"eski ana ekrana dön\" ile geçilir.", 12, C.Mut, 500, maxLines = 3, lineHeight = 17)
             }
         }
     }

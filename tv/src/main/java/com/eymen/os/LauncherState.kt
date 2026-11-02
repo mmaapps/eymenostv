@@ -391,7 +391,9 @@ class LauncherState(val activity: HomeActivity) {
                 prefs.edit().putStringSet("hiddenApps", HashSet(hidden)).apply()
             })
         }
-        list.add(SetupItem("eski ana ekranna dön", null) { goOtherHome() })
+        list.add(SetupItem("Wi-Fi ayarları", null) { openSettings(Settings.ACTION_WIFI_SETTINGS, false) })
+        list.add(SetupItem("TV sistem ayarları", null) { openSettings(Settings.ACTION_SETTINGS, false) })
+        list.add(SetupItem("eski ana ekrana dön", null) { goOtherHome() })
         list.add(SetupItem("Ana ekrana dön", null) { closeSetup() })
         return list
     }
