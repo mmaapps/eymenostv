@@ -110,13 +110,28 @@ class Tv(private val ctx: Context) {
 
     /** TV kendi ekranını açıyorsa EYMEN OS'u yeniden ana ekran yapar. */
     fun anaEkraniOnar(): String {
+        val sb = StringBuilder()
+        if (komut("pm path $OS").isBlank()) return "EYMEN OS bu TV'de yüklü değil. Önce kurulumu bitir (TV'ye bağlan)."
         komut("appops set $OS SYSTEM_ALERT_WINDOW allow")
-        val c = komut("cmd package set-home-activity $OS/.HomeActivity")
+        sb.append("Ana ekran ayarı: ").append(komut("cmd package set-home-activity $OS/.HomeActivity")).append("\n")
         komut("am start -n $OS/.HomeActivity")
         Thread.sleep(6000)
-        check(komut("pidof $OS").isNotBlank()) { "EYMEN OS açılmadı, eski ekran kapatılmadı" }
+        if (komut("pidof $OS").isBlank()) {
+            // EYMEN OS açılmadı: eski ekranı KAPATMA, yoksa TV ekransız kalır.
+            sb.append("\nEYMEN OS açılamadı, bu yüzden eski ekran kapatılmadı (TV boş kalmasın diye).\n")
+            sb.append("Çökme olduysa sebebi altta:\n\n")
+            sb.append(cokmeKaydi())
+            return sb.toString()
+        }
         eskiEkranlariKapat()
-        return "$c\n\n${durum()}"
+        sb.append("EYMEN OS çalışıyor. Eski ana ekranlar kapatıldı.\n\n")
+        sb.append(durum())
+        return sb.toString()
+    }
+
+    fun cokmeKaydi(): String {
+        val c = komut("logcat -d -b crash -t 400 | grep -iE 'eymen|AndroidRuntime|FATAL' | tail -40")
+        return if (c.isBlank()) "Çökme kaydı yok. EYMEN OS açılıyor ama ana ekran olarak tutunamıyor olabilir." else c
     }
 
     fun durum(): String = komut(
@@ -124,7 +139,8 @@ class Tv(private val ctx: Context) {
             "echo '--- ana ekran'; cmd package resolve-activity --brief -c android.intent.category.HOME android.intent.action.MAIN; " +
             "echo '--- ana ekran adaylari'; cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME; " +
             "echo '--- kapali paketler'; pm list packages -d; " +
-            "echo '--- ekranda'; dumpsys activity activities | grep -m3 -E 'topResumedActivity|mResumedActivity'"
+            "echo '--- ekranda'; dumpsys activity activities | grep -m3 -E 'topResumedActivity|mResumedActivity'; " +
+            "echo '--- eymen os cokme'; logcat -d -b crash -t 300 | grep -iE 'EYMENOS|AndroidRuntime' | tail -20"
     )
 
     companion object {
