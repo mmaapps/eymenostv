@@ -409,7 +409,7 @@ private fun SetupScreen(s: LauncherState) {
                 T("Nasıl yapılır", 18, C.Fg, 600, display = true)
                 T("1. Varsayılan ana ekran: TV ayarlarında \"Ana ekran\" seçeneği varsa EYMEN OS'u seç.", 13, C.Fg2, 500, maxLines = 3, lineHeight = 19)
                 T("2. Açılışta otomatik başlat + \"Diğer uygulamaların üzerinde gösterme\" izni: TV açılınca başlatıcı gelir.", 13, C.Fg2, 500, maxLines = 3, lineHeight = 19)
-                T("3. Ev tuşu ve açılış koruması: Erişilebilirlik › EYMEN OS koruması'nı aç. Whale ana ekranı her göründüğünde EYMEN açılır.", 13, C.Fg2, 500, maxLines = 4, lineHeight = 19)
+                T("3. Ev tuşu ve açılış koruması: Erişilebilirlik › EYMEN OS koruması'nı aç. Eski ana ekran her göründüğünde EYMEN açılır.", 13, C.Fg2, 500, maxLines = 4, lineHeight = 19)
                 T("Ayar ekranı yoksa bilgisayardan (adb):", 13, C.Gold, 700)
                 Column(Modifier.fillMaxWidth().panel(Color(0xFF05080F), 10, C.Line).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Mono("cmd package set-home-activity com.eymen.os/.HomeActivity")

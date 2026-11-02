@@ -5,8 +5,6 @@ import dadb.AdbKeyPair
 import dadb.Dadb
 import java.io.File
 import java.io.FileOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
 
 /** TV ile ADB bağlantısı ve kurulum adımları. Arayüz kodu burada yok. */
 class Tv(private val ctx: Context) {
@@ -52,34 +50,11 @@ class Tv(private val ctx: Context) {
         return d.shell(k).allOutput.trim()
     }
 
-    private fun indir(url: String, ad: String, ilerleme: (String) -> Unit): File {
+    /** APK'lar telefon uygulamasının içinde gelir, internet gerekmez. */
+    private fun cikar(ad: String, ilerleme: (String) -> Unit): File {
         val hedef = File(ctx.cacheDir, ad)
-        val parca = File(ctx.cacheDir, "$ad.parca")
-        if (hedef.length() > 0) return hedef
-        val c = URL(url).openConnection() as HttpURLConnection
-        c.instanceFollowRedirects = true
-        c.connectTimeout = 20_000
-        c.readTimeout = 60_000
-        try {
-            check(c.responseCode == 200) { "İndirilemedi: ${c.responseCode}" }
-            val toplam = c.contentLengthLong
-            c.inputStream.use { g ->
-                FileOutputStream(parca).use { o ->
-                    val b = ByteArray(64 * 1024)
-                    var gelen = 0L
-                    while (true) {
-                        val n = g.read(b)
-                        if (n < 0) break
-                        o.write(b, 0, n)
-                        gelen += n
-                        if (toplam > 0) ilerleme("$ad %${gelen * 100 / toplam}")
-                    }
-                }
-            }
-        } finally {
-            c.disconnect()
-        }
-        check(parca.renameTo(hedef)) { "Dosya kaydedilemedi" }
+        ilerleme("$ad hazırlanıyor")
+        ctx.assets.open(ad).use { g -> FileOutputStream(hedef).use { o -> g.copyTo(o) } }
         return hedef
     }
 
@@ -92,8 +67,8 @@ class Tv(private val ctx: Context) {
     fun adimYap(i: Int, ilerleme: (String) -> Unit) {
         when (i) {
             0 -> {
-                indir(UYDU_URL, "EYMEN-TV.apk", ilerleme)
-                indir(OS_URL, "EYMEN-OS-TV.apk", ilerleme)
+                cikar("EYMEN-TV.apk", ilerleme)
+                cikar("EYMEN-OS-TV.apk", ilerleme)
             }
             1 -> {
                 val liste = komut("pm list packages")
@@ -130,10 +105,8 @@ class Tv(private val ctx: Context) {
         const val PORT = 5555
         const val OS = "com.eymen.os"
         val ESKI = listOf("com.google.android.tvlauncher", "com.google.android.tvrecommendations")
-        const val OS_URL = "https://github.com/mmaapps/eymenostv/releases/latest/download/EYMEN-OS-TV.apk"
-        const val UYDU_URL = "https://github.com/mmustafatasoy/EymenTv/releases/latest/download/EYMEN-TV.apk"
         val ADIMLAR = listOf(
-            "Dosyaları indirme", "Yedek liste", "EYMEN Uydu yükleme", "EYMEN OS yükleme",
+            "Dosyaları hazırlama", "Yedek liste", "EYMEN Uydu yükleme", "EYMEN OS yükleme",
             "İzinler", "Ana ekranı ayarlama", "Eski ekranı kapatma", "Yeniden başlatma"
         )
         val GERI_AL = "for p in ${ESKI.joinToString(" ")}; do pm enable \$p; done; pm uninstall $OS"

@@ -36,7 +36,11 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          gradle :tv:assembleRelease :telefon:assembleRelease --no-daemon --stacktrace 2>&1 | tee build.log
+          gradle :tv:assembleRelease --no-daemon --stacktrace 2>&1 | tee build.log
+          mkdir -p telefon/src/main/assets
+          cp tv/build/outputs/apk/release/tv-release.apk telefon/src/main/assets/EYMEN-OS-TV.apk
+          curl -fsSL -o telefon/src/main/assets/EYMEN-TV.apk https://github.com/mmustafatasoy/EymenTv/releases/latest/download/EYMEN-TV.apk
+          gradle :telefon:assembleRelease --no-daemon --stacktrace 2>&1 | tee -a build.log
           test -s tv/build/outputs/apk/release/tv-release.apk
           test -s telefon/build/outputs/apk/release/telefon-release.apk
       - name: Kararlı sürümü yayınla
