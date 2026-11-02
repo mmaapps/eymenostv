@@ -1,4 +1,4 @@
-# EYMEN OS TV 1.1.0
+# EYMEN OS TV 1.1.1
 
 Vestel 17MB170 / Android 11 TV için EYMEN OS.
 

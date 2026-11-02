@@ -122,7 +122,7 @@ class Tv(private val ctx: Context) {
         val f = cikar(ad, ilerleme)
         ilerleme("$ad TV'ye kuruluyor")
         try {
-            yukle(f)
+            yukle(f, ilerleme)
         } catch (e: Exception) {
             if (e.message?.contains("DOWNGRADE") != true) throw e
         }
