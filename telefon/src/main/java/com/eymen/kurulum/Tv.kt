@@ -129,6 +129,21 @@ class Tv(private val ctx: Context) {
         return sb.toString()
     }
 
+    /** Açık görüntü ayarlarını okur (gerçek değerleri görmek için). */
+    fun goruntuOku(): String = komut(
+        "settings list system | grep -iE 'picture_|backlight_slider|tv_picture_advance|local_contrast|game_mode' | sort"
+    )
+
+    /** Bir hazır görüntü ayarını uygular. Hepsi geri alınabilir (Fabrika ile). */
+    fun goruntuUygula(preset: String): String {
+        val keys = PRESETLER[preset] ?: return "Bilinmeyen ayar"
+        val k = keys.joinToString("; ") { "settings put system ${it.first} ${it.second}" }
+        komut(k)
+        return "\"$preset\" uygulandı.\n\nTV ekranına bak, fark oldu mu?\n\n" +
+            keys.joinToString("\n") { "${it.first} = ${it.second}" } +
+            "\n\nMediaTek görüntü motoru bu değerleri canlı almıyorsa, TV'nin kendi Görüntü menüsünden ayarla."
+    }
+
     fun cokmeKaydi(): String {
         val c = komut("logcat -d -b crash -t 400 | grep -iE 'eymen|AndroidRuntime|FATAL' | tail -40")
         return if (c.isBlank()) "Çökme kaydı yok. EYMEN OS açılıyor ama ana ekran olarak tutunamıyor olabilir." else c
@@ -144,6 +159,33 @@ class Tv(private val ctx: Context) {
     )
 
     companion object {
+        val PRESETLER: Map<String, List<Pair<String, String>>> = mapOf(
+            // Gürültü azaltmayı kapatmak yumuşaklığı/bulanıklığı azaltır: en çok fark eden ayar.
+            "Net görüntü" to listOf(
+                "tv_picture_advance_video_dnr" to "0",
+                "tv_picture_advance_video_mpeg_nr" to "0",
+                "tv_picture_video_local_contrast_control" to "3"
+            ),
+            "Canlı renk" to listOf(
+                "picture_saturation" to "58",
+                "tv_picture_video_local_contrast_control" to "3",
+                "picture_blue_light" to "0"
+            ),
+            "Gece (göz yormaz)" to listOf(
+                "picture_brightness" to "60",
+                "picture_blue_light" to "1"
+            ),
+            // TV'den okuduğumuz ilk değerler: geri dönüş noktası.
+            "Fabrika görüntüsü" to listOf(
+                "tv_picture_advance_video_dnr" to "3",
+                "tv_picture_advance_video_mpeg_nr" to "3",
+                "picture_saturation" to "49",
+                "picture_brightness" to "75",
+                "picture_hue" to "12",
+                "tv_picture_video_local_contrast_control" to "3",
+                "picture_blue_light" to "0"
+            )
+        )
         val KORUNAN = setOf(OS, "android", "com.android.settings", "com.android.tv.settings")
         const val PORT = 5555
         const val OS = "com.eymen.os"
