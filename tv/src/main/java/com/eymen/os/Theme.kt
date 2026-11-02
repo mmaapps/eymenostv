@@ -39,6 +39,7 @@ object C {
     val Live = Color(0xFFFF5468)
     val Red = Color(0xFFE5484D)
     val Green = Color(0xFF3FB950)
+    val Mint = Color(0xFF7BE08A)
     val Yellow = Color(0xFFE9C46A)
     val Blue = Color(0xFF4C8DFF)
     val FocusInk = Color(0xFF0A1224)
@@ -50,6 +51,7 @@ object C {
 object Fonts {
     private val body = HashMap<Int, FontFamily>()
     private val display = HashMap<Int, FontFamily>()
+    private var signature: FontFamily? = null
 
     fun init(ctx: Context) {
         val names = try {
@@ -63,6 +65,13 @@ object Fonts {
         if (names.contains("Sora.ttf")) {
             for (w in listOf(400, 500, 600, 700)) load(ctx, "fonts/Sora.ttf", w)?.let { display[w] = it }
         }
+        if (names.contains("GreatVibes.ttf")) {
+            signature = try {
+                FontFamily(androidx.compose.ui.text.font.Typeface(Typeface.createFromAsset(ctx.assets, "fonts/GreatVibes.ttf")))
+            } catch (e: Exception) {
+                null
+            }
+        }
     }
 
     private fun load(ctx: Context, path: String, w: Int): FontFamily? = try {
@@ -73,6 +82,9 @@ object Fonts {
     }
 
     fun family(displayFace: Boolean, w: Int): FontFamily? = if (displayFace) display[w] else body[w]
+
+    /** The hand-written face of the signature; TVs without the bundled font use their own cursive. */
+    fun signature(): FontFamily = signature ?: FontFamily.Cursive
 }
 
 @Composable

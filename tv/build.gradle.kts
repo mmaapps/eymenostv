@@ -12,8 +12,8 @@ android {
         applicationId = "com.eymen.os"
         minSdk = 26
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.0.4"
+        versionCode = 6
+        versionName = "1.1.0"
     }
 
     signingConfigs {
@@ -50,6 +50,12 @@ android {
         buildConfig = true
     }
 
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+
     lint {
         abortOnError = false
         checkReleaseBuilds = false
@@ -67,4 +73,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("androidx.media3:media3-exoplayer:1.4.1")
     implementation("androidx.media3:media3-exoplayer-hls:1.4.1")
+    implementation("dev.mobile:dadb:1.2.10")
+    implementation("com.google.zxing:core:3.5.3")
 }

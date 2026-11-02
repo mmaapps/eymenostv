@@ -18,6 +18,7 @@ import kotlin.concurrent.thread
 class MainActivity : Activity() {
     private lateinit var tv: Tv
     private var kurulumVar = false
+    private var hizliIste = false
     private lateinit var kok: LinearLayout
     private val zemin = Color.parseColor("#0A1224")
     private val kart = Color.parseColor("#17213D")
@@ -57,7 +58,14 @@ class MainActivity : Activity() {
             "Hata ayıklama (USB hata ayıklama) seçeneğini aç.",
             "Kurulum sırasında TV'yi ve modemi kapatma."
         ).forEachIndexed { i, s -> kartYazi("${i + 1}. $s") }
-        dugme("Hazırım, devam et") { baglanti() }
+        dugme("Hazırım, devam et") {
+            hizliIste = false
+            baglanti()
+        }
+        dugme("EYMEN OS kurulu: Hızlı güncelle", false) {
+            hizliIste = true
+            baglanti()
+        }
         if (tv.adim > 0) dugme("Yarım kalan kuruluma devam et", false) { baglanti() }
     }
 
@@ -88,7 +96,13 @@ class MainActivity : Activity() {
             thread {
                 try {
                     tv.baglan(ip)
-                    runOnUiThread { if (tv.adim > 0 || !kurulumVar) kurulum() else komutlar() }
+                    runOnUiThread {
+                        when {
+                            hizliIste -> hizli()
+                            tv.adim > 0 || !kurulumVar -> kurulum()
+                            else -> komutlar()
+                        }
+                    }
                 } catch (e: Throwable) {
                     runOnUiThread { wifiKoptu("Bağlanamadı: ${e.message ?: e.javaClass.simpleName}") }
                 }
@@ -139,6 +153,41 @@ class MainActivity : Activity() {
                 runOnUiThread { wifiKoptu("Durdu: ${e.message ?: e.javaClass.simpleName}") }
             }
         }
+    }
+
+    private fun hizli() {
+        temizle("TV BAĞLI · WI-FI", "Hızlı güncelle")
+        yazi("TV yeniden başlamaz. Kanalların, sıran ve ayarların silinmez.")
+        val rows = Tv.HIZLI.map { kartYazi(it) }
+        val d = TextView(this)
+        d.setTextColor(altin)
+        d.textSize = 16f
+        d.setPadding(0, dp(10), 0, dp(10))
+        ekle(d)
+        fun boya(aktif: Int) {
+            rows.forEachIndexed { i, t ->
+                val durum = if (i < aktif) "Tamam" else if (i == aktif) "Çalışıyor" else "Bekliyor"
+                t.text = "${Tv.HIZLI[i]}: $durum"
+            }
+        }
+        boya(0)
+        thread {
+            try {
+                for (i in Tv.HIZLI.indices) {
+                    runOnUiThread { boya(i) }
+                    tv.hizliAdim(i) { m -> runOnUiThread { d.text = m } }
+                }
+                runOnUiThread { hizliBitti() }
+            } catch (e: Throwable) {
+                runOnUiThread { wifiKoptu("Durdu: ${e.message ?: e.javaClass.simpleName}") }
+            }
+        }
+    }
+
+    private fun hizliBitti() {
+        temizle("TAMAM", "Hızlı güncelleme bitti")
+        yazi("Bundan sonra TV kendini güncelleyecek. Yeni sürüm çıkınca ekranda uyarı görürsün, telefondan kurulum yapman gerekmez.")
+        dugme("Komut merkezi") { komutlar() }
     }
 
     private fun bitti() {
@@ -194,6 +243,7 @@ class MainActivity : Activity() {
                 runOnUiThread { cikti.text = c }
             }
         }
+        dugme("Hızlı güncelle") { hizli() }
         dugme("Ana ekranı EYMEN OS yap") { calistir { tv.anaEkraniOnar() } }
         dugme("Durumu kontrol et", false) { calistir { tv.durum() } }
         dugme("Wi-Fi durumu", false) { gonder("cmd wifi status") }

@@ -1,5 +1,12 @@
 package com.eymen.os
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -20,6 +27,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,11 +52,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.max
 
 private const val HERO_X = 64
-private const val HERO_Y = 100
+private const val HERO_Y = 80
 private const val HERO_W = 498
 private const val HERO_H = 280
 private val trLocale = Locale("tr", "TR")
@@ -64,7 +76,15 @@ fun LauncherRoot(s: LauncherState) {
             val videoModifier = Modifier.offset(HERO_X.dp, HERO_Y.dp).size(HERO_W.dp, HERO_H.dp)
             AndroidView(factory = { s.preview.tvView }, modifier = videoModifier)
             AndroidView(factory = { s.preview.texture }, modifier = videoModifier)
-            if (s.screen == Screen.HOME) HomeScreen(s) else SetupScreen(s)
+            when (s.screen) {
+                Screen.HOME -> HomeScreen(s)
+                Screen.HUB -> HubScreen(s)
+                Screen.SETUP -> SetupScreen(s)
+                Screen.UPDATE -> UpdateScreen(s)
+                Screen.ABOUT -> AboutScreen(s)
+            }
+            if (s.qrOpen) QrOverlay(s)
+            if (s.noticeVisible) UpdateNotice(s)
             val t = s.toastText
             if (t != null) {
                 Row(
@@ -149,8 +169,8 @@ private fun HomeScreen(s: LauncherState) {
         }
 
         Column(
-            Modifier.fillMaxSize().padding(horizontal = 64.dp, vertical = 34.dp),
-            verticalArrangement = Arrangement.spacedBy(22.dp)
+            Modifier.fillMaxSize().padding(start = 64.dp, end = 64.dp, top = 22.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             TopBar(s, now)
 
@@ -184,6 +204,7 @@ private fun HomeScreen(s: LauncherState) {
 
             if (s.channels.isNotEmpty()) ChannelsRow(s, now)
             AppsRow(s)
+            AdStrip(s)
         }
     }
 }
@@ -201,13 +222,80 @@ private fun TopBar(s: LauncherState, now: Long) {
         Spacer(Modifier.width(14.dp))
         T(s.time(now), 26, C.Fg, 500, display = true)
         Spacer(Modifier.width(18.dp))
-        val focused = s.row == 0
-        Box(
-            Modifier.size(42.dp).scale(if (focused) 1.08f else 1f)
-                .panel(if (focused) C.Fg else C.Glass2, 21, if (focused) null else C.Line),
-            contentAlignment = Alignment.Center
-        ) {
-            GearIcon(20, if (focused) C.FocusInk else C.Fg)
+        SettingsPill(s)
+    }
+}
+
+/** The way into the settings: the gear keeps turning, the line below it tells if an update waits. */
+@Composable
+private fun SettingsPill(s: LauncherState) {
+    val focused = s.row == 0
+    val waiting = s.updates.items.isNotEmpty()
+    val motion = rememberInfiniteTransition(label = "ayarlar")
+    val turn by motion.animateFloat(0f, 360f, infiniteRepeatable(tween(9000, easing = LinearEasing)), label = "dişli")
+    val beat by motion.animateFloat(1f, 0.35f, infiniteRepeatable(tween(1000), RepeatMode.Reverse), label = "nabız")
+    val statusColor = if (waiting) (if (focused) Color(0xFF8A5A00) else C.Gold) else (if (focused) Color(0xFF1B7A33) else C.Mint)
+    Row(
+        Modifier.height(42.dp)
+            .scale(if (focused) 1.06f else 1f)
+            .then(if (focused) Modifier.shadow(14.dp, RoundedCornerShape(21.dp)) else Modifier)
+            .panel(if (focused) C.Fg else C.Tile, 21, if (focused) null else C.Gold, 2)
+            .padding(start = 4.dp, end = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(Modifier.size(32.dp).panel(C.Gold, 16), contentAlignment = Alignment.Center) {
+            Box(Modifier.graphicsLayer { rotationZ = turn }) {
+                GearIcon(21, C.FocusInk)
+            }
+        }
+        Column {
+            T("Ayarlar", 14, if (focused) C.FocusInk else C.Fg, 800)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Box(Modifier.size(6.dp).graphicsLayer { alpha = beat }.background(statusColor, RoundedCornerShape(3.dp)))
+                T(if (waiting) "Güncelleme var" else "Güncel", 11, statusColor, 700)
+            }
+        }
+    }
+}
+
+/** The advert for the website along the bottom. OK opens a big QR code, the TV has no browser. */
+@Composable
+private fun AdStrip(s: LauncherState) {
+    val focused = s.row == 4
+    val messages = s.adMessages.toList()
+    var i by remember { mutableStateOf(0) }
+    LaunchedEffect(messages.size) {
+        while (true) {
+            delay(6000L)
+            if (messages.isNotEmpty()) i = (i + 1) % messages.size
+        }
+    }
+    val ink = if (focused) C.FocusInk else C.Fg
+    Row(
+        Modifier.fillMaxWidth().height(40.dp)
+            .then(if (focused) Modifier.shadow(14.dp, RoundedCornerShape(11.dp)) else Modifier)
+            .panel(if (focused) C.Fg else Color(0xFF101A33), 11, if (focused) null else Color(0xFF8A744C))
+            .padding(start = 7.dp, end = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(9.dp)
+    ) {
+        Box(Modifier.size(27.dp).panel(C.Gold, 7), contentAlignment = Alignment.Center) {
+            T("A", 15, C.GoldInk, 700, display = true)
+        }
+        T("Atasoy Yazılım", 14, ink, 800)
+        Box(Modifier.size(1.dp, 16.dp).background(if (focused) C.FocusSub else Color(0xFF3A4A72)))
+        Crossfade(targetState = messages.getOrElse(i) { "" }, modifier = Modifier.weight(1f), label = "reklam") { m ->
+            T(m, 14, if (focused) C.FocusSub else C.Fg2, 600)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            messages.indices.forEach { k ->
+                Box(Modifier.size(6.dp).background(if (k == i) C.Gold else Color(0xFF3A4A72), RoundedCornerShape(3.dp)))
+            }
+        }
+        T("atasoyyazilim.com", 14, if (focused) C.FocusInk else C.Gold, 800)
+        Box(Modifier.panel(C.Gold, 6).padding(horizontal = 8.dp, vertical = 3.dp)) {
+            T("OK: QR kod", 10, C.GoldInk, 800)
         }
     }
 }
@@ -380,12 +468,14 @@ private fun SetupScreen(s: LauncherState) {
             Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     BrandMark(30)
-                    T("İLK KURULUM", 12, C.Gold, 800, spacing = 2f)
+                    T(if (s.setupApps) "UYGULAMALAR" else "AÇILIŞ VE ANA EKRAN", 12, C.Gold, 800, spacing = 2f)
                 }
-                T("TV açılınca EYMEN OS gelsin", 30, C.Fg, 600, display = true)
-                Row(Modifier.padding(bottom = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(Modifier.size(9.dp).panel(if (isDefault) C.Green else C.Red, 5))
-                    T(if (isDefault) "Varsayılan ana ekran: EYMEN OS" else "Varsayılan ana ekran: ${s.otherHomeLabel() ?: "seçilmedi"}", 14, if (isDefault) C.Fg2 else C.Fg2, 600)
+                T(if (s.setupApps) "Gizli uygulamalar" else "TV açılınca EYMEN OS gelsin", 30, C.Fg, 600, display = true)
+                if (!s.setupApps) {
+                    Row(Modifier.padding(bottom = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Box(Modifier.size(9.dp).panel(if (isDefault) C.Green else C.Red, 5))
+                        T(if (isDefault) "Varsayılan ana ekran: EYMEN OS" else "Varsayılan ana ekran: ${s.otherHomeLabel() ?: "seçilmedi"}", 14, C.Fg2, 600)
+                    }
                 }
                 items.drop(start).take(visible).forEachIndexed { i, item ->
                     val focused = start + i == index
@@ -402,21 +492,23 @@ private fun SetupScreen(s: LauncherState) {
                     }
                 }
             }
-            Column(
-                Modifier.width(400.dp).panel(Color(0x0FD6E2FF), 18, C.Line).padding(22.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                T("Nasıl yapılır", 18, C.Fg, 600, display = true)
-                T("1. Varsayılan ana ekran: TV ayarlarında \"Ana ekran\" seçeneği varsa EYMEN OS'u seç.", 13, C.Fg2, 500, maxLines = 3, lineHeight = 19)
-                T("2. Açılışta otomatik başlat + \"Diğer uygulamaların üzerinde gösterme\" izni: TV açılınca başlatıcı gelir.", 13, C.Fg2, 500, maxLines = 3, lineHeight = 19)
-                T("3. Ev tuşu ve açılış koruması: Erişilebilirlik › EYMEN OS koruması'nı aç. Eski ana ekran her göründüğünde EYMEN açılır.", 13, C.Fg2, 500, maxLines = 4, lineHeight = 19)
-                T("Ayar ekranı yoksa bilgisayardan (adb):", 13, C.Gold, 700)
-                Column(Modifier.fillMaxWidth().panel(Color(0xFF05080F), 10, C.Line).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Mono("cmd package set-home-activity com.eymen.os/.HomeActivity")
-                    Mono("appops set com.eymen.os SYSTEM_ALERT_WINDOW allow")
-                    Mono("settings put secure enabled_accessibility_services com.eymen.os/.EnforcerService")
+            if (!s.setupApps) {
+                Column(
+                    Modifier.width(400.dp).panel(Color(0x0FD6E2FF), 18, C.Line).padding(22.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    T("Nasıl yapılır", 18, C.Fg, 600, display = true)
+                    T("1. Varsayılan ana ekran: TV ayarlarında \"Ana ekran\" seçeneği varsa EYMEN OS'u seç.", 13, C.Fg2, 500, maxLines = 3, lineHeight = 19)
+                    T("2. Açılışta otomatik başlat + \"Diğer uygulamaların üzerinde gösterme\" izni: TV açılınca başlatıcı gelir.", 13, C.Fg2, 500, maxLines = 3, lineHeight = 19)
+                    T("3. Ev tuşu ve açılış koruması: Erişilebilirlik › EYMEN OS koruması'nı aç. Eski ana ekran her göründüğünde EYMEN açılır.", 13, C.Fg2, 500, maxLines = 4, lineHeight = 19)
+                    T("Ayar ekranı yoksa bilgisayardan (adb):", 13, C.Gold, 700)
+                    Column(Modifier.fillMaxWidth().panel(Color(0xFF05080F), 10, C.Line).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Mono("cmd package set-home-activity com.eymen.os/.HomeActivity")
+                        Mono("appops set com.eymen.os SYSTEM_ALERT_WINDOW allow")
+                        Mono("settings put secure enabled_accessibility_services com.eymen.os/.EnforcerService")
+                    }
+                    T("Komutların başına \"adb shell\" yaz. eski ana ekran silinmez; listeden \"eski ana ekrana dön\" ile geçilir.", 12, C.Mut, 500, maxLines = 3, lineHeight = 17)
                 }
-                T("Komutların başına \"adb shell\" yaz. eski ana ekran silinmez; listeden \"eski ana ekrana dön\" ile geçilir.", 12, C.Mut, 500, maxLines = 3, lineHeight = 17)
             }
         }
     }

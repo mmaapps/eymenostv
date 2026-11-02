@@ -16,9 +16,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -51,6 +53,20 @@ class LauncherState(val activity: HomeActivity) {
     var col by mutableStateOf(0)
     var moving by mutableStateOf<String?>(null)
     var setupIndex by mutableStateOf(0)
+    /** Which list the plain settings screen shows: start-up settings or hidden apps. */
+    var setupApps by mutableStateOf(false)
+    var hubIndex by mutableStateOf(0)
+    var online by mutableStateOf(false)
+    val updates = UpdateManager(ctx, prefs, scope)
+    var updateRow by mutableStateOf(0)
+    var noticeVisible by mutableStateOf(false)
+    var noticeIndex by mutableStateOf(0)
+    var noticeLeft by mutableStateOf(NOTICE_SECONDS)
+    private var noticeJob: Job? = null
+    private var noticeSnoozedUntil = 0L
+    val adMessages = mutableStateListOf<String>()
+    var qrOpen by mutableStateOf(false)
+    var siteQr by mutableStateOf<ImageBitmap?>(null)
     var toastText by mutableStateOf<String?>(null)
     var soundOn by mutableStateOf(prefs.getBoolean("sound", true))
     var autoStart by mutableStateOf(prefs.getBoolean("autoStart", true))
@@ -66,6 +82,17 @@ class LauncherState(val activity: HomeActivity) {
 
     init {
         hidden.addAll(prefs.getStringSet("hiddenApps", emptySet()) ?: emptySet())
+        val saved = try {
+            Duyuru.parse(prefs.getString("duyuru", "") ?: "")
+        } catch (e: Exception) {
+            emptyList()
+        }
+        adMessages.addAll(saved.ifEmpty { Duyuru.VARSAYILAN })
+        updates.onFinished = {
+            toast("Güncelleme tamamlandı")
+            refreshKey++
+            if (screen == Screen.UPDATE) closeHub()
+        }
     }
 
     // ------------------------------------------------------------ loading
@@ -81,11 +108,211 @@ class LauncherState(val activity: HomeActivity) {
                 delay(20000L)
             }
         }
+        scope.launch {
+            while (isActive) {
+                checkUpdates()
+                delay(UPDATE_PERIOD)
+            }
+        }
+        scope.launch {
+            siteQr = withContext(Dispatchers.Default) { Qr.make(SITE_URL) }?.asImageBitmap()
+        }
         if (!isDefaultHome() && !prefs.getBoolean("setupSeen", false)) {
+            setupApps = false
             screen = Screen.SETUP
             prefs.edit().putBoolean("setupSeen", true).apply()
         }
+        val seen = prefs.getString("seenVersion", "") ?: ""
+        if (seen != BuildConfig.VERSION_NAME) {
+            if (seen.isNotEmpty()) toast("EYMEN OS ${BuildConfig.VERSION_NAME} sürümüne güncellendi", 7000L)
+            prefs.edit().putString("seenVersion", BuildConfig.VERSION_NAME).apply()
+        }
     }
+
+    // ------------------------------------------------------------ updates
+
+    /** Looks for new versions; a find starts the download and puts the notice on screen. */
+    fun checkUpdates() {
+        updates.check { found ->
+            if (found) {
+                if (updates.auto) updates.run(false)
+                offerNotice()
+            }
+        }
+        scope.launch {
+            val json = withContext(Dispatchers.IO) { Duyuru.fetch() } ?: return@launch
+            val list = try {
+                Duyuru.parse(json)
+            } catch (e: Exception) {
+                emptyList()
+            }
+            if (list.isNotEmpty()) {
+                adMessages.clear()
+                adMessages.addAll(list)
+                prefs.edit().putString("duyuru", json).apply()
+            }
+        }
+    }
+
+    /** The TV has just reached a network. */
+    fun onNetwork(available: Boolean) {
+        online = available
+        if (!available) return
+        if (System.currentTimeMillis() - updates.lastCheck < NETWORK_MIN_GAP) return
+        handler.postDelayed({ checkUpdates() }, 3000L)
+    }
+
+    /** Never on top of an app: the notice waits until the user is back on the home screen. */
+    fun offerNotice() {
+        if (updates.items.isEmpty() || noticeVisible || updates.busy() && updates.phase != UpdatePhase.DOWNLOADING) return
+        if (!visibleNow || screen != Screen.HOME) return
+        if (System.currentTimeMillis() < noticeSnoozedUntil) return
+        noticeVisible = true
+        noticeIndex = 0
+        noticeLeft = NOTICE_SECONDS
+        noticeJob?.cancel()
+        if (updates.auto) {
+            noticeJob = scope.launch {
+                while (noticeLeft > 0) {
+                    delay(1000L)
+                    noticeLeft -= 1
+                }
+                startUpdate()
+            }
+        }
+    }
+
+    private fun hideNotice() {
+        noticeVisible = false
+        noticeJob?.cancel()
+        noticeJob = null
+    }
+
+    fun startUpdate() {
+        hideNotice()
+        openUpdate()
+        updates.run(true)
+    }
+
+    private fun later() {
+        hideNotice()
+        noticeSnoozedUntil = System.currentTimeMillis() + UPDATE_PERIOD
+    }
+
+    private fun noticeKey(code: Int) {
+        when {
+            code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                noticeIndex = 1 - noticeIndex
+                noticeJob?.cancel()
+            }
+            isOk(code) -> if (noticeIndex == 0) startUpdate() else later()
+            code == KeyEvent.KEYCODE_BACK -> later()
+        }
+    }
+
+    /** EYMEN Uydu or the phone asked for something through the home intent. */
+    fun onRequest(request: String) {
+        when (request) {
+            "izin" -> scope.launch {
+                var tries = 0
+                while (updates.busy() && tries < 20) {
+                    delay(500L)
+                    tries += 1
+                }
+                updates.authorize()
+            }
+            else -> {
+                hideNotice()
+                openUpdate()
+                updates.check { found -> if (found) updates.run(true) }
+            }
+        }
+    }
+
+    fun openUpdate() {
+        screen = Screen.UPDATE
+        updateRow = 0
+        preview.stop()
+    }
+
+    fun closeUpdate() {
+        if (updates.busy()) return
+        openHub()
+    }
+
+    private fun updateAction() {
+        val u = updates
+        if (u.busy()) return
+        if (u.items.isNotEmpty()) u.run(true) else checkUpdates()
+    }
+
+    private fun updateKey(code: Int): Boolean {
+        when {
+            code == KeyEvent.KEYCODE_DPAD_UP -> updateRow = 0
+            code == KeyEvent.KEYCODE_DPAD_DOWN -> updateRow = 1
+            isOk(code) -> if (updateRow == 0) updateAction() else updates.setAutomatic(!updates.auto)
+            code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU -> closeUpdate()
+            else -> return false
+        }
+        return true
+    }
+
+    // ------------------------------------------------------------ settings cards
+
+    fun openHub() {
+        screen = Screen.HUB
+        preview.stop()
+        refreshKey++
+    }
+
+    fun closeHub() {
+        hubIndex = 0
+        screen = Screen.HOME
+        row = 1
+        col = 0
+        current?.let { preview.play(it, !soundOn) }
+        offerNotice()
+    }
+
+    private fun openList(apps: Boolean) {
+        setupApps = apps
+        setupIndex = 0
+        refreshKey++
+        screen = Screen.SETUP
+    }
+
+    private fun hubKey(code: Int): Boolean {
+        when {
+            code == KeyEvent.KEYCODE_DPAD_LEFT -> if (hubIndex % 3 > 0) hubIndex -= 1
+            code == KeyEvent.KEYCODE_DPAD_RIGHT -> if (hubIndex % 3 < 2) hubIndex += 1
+            code == KeyEvent.KEYCODE_DPAD_UP -> if (hubIndex >= 3) hubIndex -= 3
+            code == KeyEvent.KEYCODE_DPAD_DOWN -> if (hubIndex < 6) hubIndex += 3
+            isOk(code) -> hubAction(hubIndex)
+            code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU || code == KeyEvent.KEYCODE_SETTINGS -> closeHub()
+            else -> return false
+        }
+        return true
+    }
+
+    private fun hubAction(i: Int) {
+        when (i) {
+            0 -> openUpdate()
+            1 -> openEymen(null, "channels")
+            2 -> openSettings(Settings.ACTION_WIFI_SETTINGS, false)
+            3 -> {
+                soundOn = !soundOn
+                prefs.edit().putBoolean("sound", soundOn).apply()
+                preview.setMuted(!soundOn)
+            }
+            4 -> openList(false)
+            5 -> openList(true)
+            6 -> openSettings(Settings.ACTION_SETTINGS, false)
+            7 -> goOtherHome()
+            8 -> screen = Screen.ABOUT
+        }
+    }
+
+    fun channelCount(): Int = allChannels.size
 
     fun reloadApps() {
         scope.launch {
@@ -189,6 +416,7 @@ class LauncherState(val activity: HomeActivity) {
         1 -> heroActions.size
         2 -> channels.size
         3 -> appsRowSize()
+        4 -> 1
         else -> 0
     }
 
@@ -196,10 +424,10 @@ class LauncherState(val activity: HomeActivity) {
 
     private val hideToast = Runnable { toastText = null }
 
-    fun toast(s: String) {
+    fun toast(s: String, millis: Long = 3000L) {
         toastText = s
         handler.removeCallbacks(hideToast)
-        handler.postDelayed(hideToast, 3000L)
+        handler.postDelayed(hideToast, millis)
     }
 
     fun openEymen(ch: Ch?, open: String?) {
@@ -353,6 +581,18 @@ class LauncherState(val activity: HomeActivity) {
     fun setupItems(): List<SetupItem> {
         val tick = refreshKey
         val list = ArrayList<SetupItem>()
+        if (setupApps) {
+            for (pkg in hidden.toList()) {
+                val label = apps.firstOrNull { it.pkg == pkg }?.label ?: pkg
+                list.add(SetupItem("Gizli: $label", "Göster") {
+                    hidden.remove(pkg)
+                    prefs.edit().putStringSet("hiddenApps", HashSet(hidden)).apply()
+                })
+            }
+            if (list.isEmpty()) list.add(SetupItem("Gizli uygulama yok"))
+            list.add(SetupItem("Ayarlara dön", null) { closeSetup() })
+            return list
+        }
         list.add(SetupItem("Varsayılan ana ekran", if (isDefaultHome()) "EYMEN OS" else (otherHomeLabel() ?: "Seçilmedi") + tick.toString().take(0)) {
             openSettings(Settings.ACTION_HOME_SETTINGS, false)
         })
@@ -379,37 +619,12 @@ class LauncherState(val activity: HomeActivity) {
         list.add(SetupItem("TV kanal izni", if (ctx.checkSelfPermission(PERM_TV) == PackageManager.PERMISSION_GRANTED) "Verildi" else "Verilmedi") {
             activity.requestTvPermission()
         })
-        list.add(SetupItem("Önizleme sesi", onOff(soundOn)) {
-            soundOn = !soundOn
-            prefs.edit().putBoolean("sound", soundOn).apply()
-            preview.setMuted(!soundOn)
-        })
-        for (pkg in hidden.toList()) {
-            val label = apps.firstOrNull { it.pkg == pkg }?.label ?: pkg
-            list.add(SetupItem("Gizli: $label", "Göster") {
-                hidden.remove(pkg)
-                prefs.edit().putStringSet("hiddenApps", HashSet(hidden)).apply()
-            })
-        }
-        list.add(SetupItem("Wi-Fi ayarları", null) { openSettings(Settings.ACTION_WIFI_SETTINGS, false) })
-        list.add(SetupItem("TV sistem ayarları", null) { openSettings(Settings.ACTION_SETTINGS, false) })
-        list.add(SetupItem("eski ana ekrana dön", null) { goOtherHome() })
-        list.add(SetupItem("Ana ekrana dön", null) { closeSetup() })
+        list.add(SetupItem("Ayarlara dön", null) { closeSetup() })
         return list
     }
 
-    fun openSetup() {
-        screen = Screen.SETUP
-        setupIndex = 0
-        refreshKey++
-        preview.stop()
-    }
-
     fun closeSetup() {
-        screen = Screen.HOME
-        row = 1
-        col = 0
-        current?.let { preview.play(it, !soundOn) }
+        openHub()
     }
 
     // ------------------------------------------------------------ keys
@@ -418,6 +633,23 @@ class LauncherState(val activity: HomeActivity) {
         code == KeyEvent.KEYCODE_NUMPAD_ENTER || code == KeyEvent.KEYCODE_BUTTON_A
 
     fun onKey(code: Int): Boolean {
+        if (noticeVisible) {
+            noticeKey(code)
+            return true
+        }
+        if (qrOpen) {
+            if (isOk(code) || code == KeyEvent.KEYCODE_BACK) qrOpen = false
+            return true
+        }
+        when (screen) {
+            Screen.HUB -> return hubKey(code)
+            Screen.UPDATE -> return updateKey(code)
+            Screen.ABOUT -> {
+                if (isOk(code) || code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU) screen = Screen.HUB
+                return true
+            }
+            else -> {}
+        }
         if (screen == Screen.SETUP) {
             val items = setupItems()
             when {
@@ -455,8 +687,8 @@ class LauncherState(val activity: HomeActivity) {
             }
             code == KeyEvent.KEYCODE_DPAD_DOWN -> {
                 var r = row + 1
-                while (r <= 3 && cols(r) == 0) r++
-                if (r <= 3) {
+                while (r <= 4 && cols(r) == 0) r++
+                if (r <= 4) {
                     row = r
                     col = col.coerceIn(0, max(0, cols(r) - 1))
                 }
@@ -481,7 +713,7 @@ class LauncherState(val activity: HomeActivity) {
             }
             code == KeyEvent.KEYCODE_CHANNEL_UP -> zap(1)
             code == KeyEvent.KEYCODE_CHANNEL_DOWN -> zap(-1)
-            code == KeyEvent.KEYCODE_MENU || code == KeyEvent.KEYCODE_SETTINGS -> openSetup()
+            code == KeyEvent.KEYCODE_MENU || code == KeyEvent.KEYCODE_SETTINGS -> openHub()
             code == KeyEvent.KEYCODE_GUIDE || code == KeyEvent.KEYCODE_PROG_GREEN -> openEymen(current, "epg")
             code == KeyEvent.KEYCODE_BACK -> {
                 row = 1
@@ -494,7 +726,7 @@ class LauncherState(val activity: HomeActivity) {
 
     private fun activate() {
         when (row) {
-            0 -> openSetup()
+            0 -> openHub()
             1 -> when (col) {
                 0 -> openEymen(current, null)
                 1 -> openEymen(current, "epg")
@@ -506,13 +738,19 @@ class LauncherState(val activity: HomeActivity) {
                 if (col < vis.size) launchApp(vis[col])
                 else inputs.getOrNull(col - vis.size)?.let { openInput(it) }
             }
+            4 -> qrOpen = true
         }
     }
 
     // ------------------------------------------------------------ lifecycle
 
     fun onHome() {
-        if (screen == Screen.SETUP) return
+        if (screen == Screen.SETUP && !setupApps) return
+        if (screen == Screen.UPDATE && updates.busy()) return
+        if (screen != Screen.HOME) {
+            closeHub()
+            return
+        }
         moving = null
         row = 1
         col = 0
@@ -537,6 +775,8 @@ class LauncherState(val activity: HomeActivity) {
         guardUntil = System.currentTimeMillis() + 90000L
         guardAttempts = 0
         userLaunch = false
+        noticeSnoozedUntil = 0L
+        handler.postDelayed({ offerNotice() }, 2500L)
     }
 
     fun onStart() {
@@ -544,10 +784,12 @@ class LauncherState(val activity: HomeActivity) {
         visibleNow = true
         refreshKey++
         reloadChannels()
+        offerNotice()
     }
 
     fun onStop() {
         visibleNow = false
+        hideNotice()
         preview.stop()
     }
 
@@ -563,5 +805,9 @@ class LauncherState(val activity: HomeActivity) {
     companion object {
         const val PREFS = "baslatici"
         const val PERM_TV = "android.permission.READ_TV_LISTINGS"
+        const val SITE_URL = "https://atasoyyazilim.com"
+        const val NOTICE_SECONDS = 60
+        const val UPDATE_PERIOD = 6 * 3600000L
+        const val NETWORK_MIN_GAP = 15 * 60000L
     }
 }

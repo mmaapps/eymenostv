@@ -12,6 +12,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.core.graphics.drawable.toBitmap
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
+import com.google.zxing.qrcode.QRCodeWriter
 import org.json.JSONObject
 import java.io.InputStream
 import java.net.HttpURLConnection
@@ -19,7 +22,7 @@ import java.net.URL
 import java.text.Normalizer
 import java.util.Locale
 
-enum class Screen { HOME, SETUP }
+enum class Screen { HOME, HUB, SETUP, UPDATE, ABOUT }
 
 class AppEntry(val pkg: String, val label: String) {
     var banner by mutableStateOf<ImageBitmap?>(null)
@@ -41,7 +44,9 @@ class Ch(
     val inputId: String?,
     val url: String?,
     val logoUrl: String?,
-    val fav: Boolean
+    val fav: Boolean,
+    /** Set when the user added a logo in EYMEN Uydu; it changes whenever that logo changes. */
+    val logoRev: Long = 0L
 ) {
     var logo by mutableStateOf<ImageBitmap?>(null)
     var logoRequested = false
@@ -140,7 +145,8 @@ object Channels {
                     inputId = j.optString("inputId", "").ifEmpty { null },
                     url = j.optString("url", "").ifEmpty { null },
                     logoUrl = j.optString("logo", "").ifEmpty { null },
-                    fav = j.optBoolean("fav", false)
+                    fav = j.optBoolean("fav", false),
+                    logoRev = j.optLong("logoRev", 0L)
                 )
             )
         }
@@ -245,6 +251,13 @@ object Logos {
     }
 
     fun load(ctx: Context, ch: Ch): Bitmap? {
+        if (ch.logoRev > 0L) {
+            try {
+                val uri = Uri.parse("content://com.eymen.uydukontrol.state/logo/" + Uri.encode(ch.key))
+                decode(ctx.contentResolver.openInputStream(uri))?.let { return it }
+            } catch (e: Exception) {
+            }
+        }
         try {
             val n = norm(ch.name)
             val name = aliases[n] ?: assetIndex(ctx)[n]
@@ -267,5 +280,49 @@ object Logos {
         } catch (e: Exception) {
             null
         }
+    }
+}
+
+/** The advert at the bottom of the home screen. Its text can change on GitHub without an update. */
+object Duyuru {
+    private const val URL_DUYURU = "https://raw.githubusercontent.com/mmaapps/eymenostv/main/duyuru.json"
+    val VARSAYILAN = listOf(
+        "Android Auto için Eymen Medya uygulaması",
+        "Android Auto'da YouTube izleme rehberi",
+        "Yazılım ve uygulama indirme sitesi"
+    )
+
+    fun parse(json: String): List<String> {
+        val arr = JSONObject(json).optJSONArray("mesajlar") ?: return emptyList()
+        return (0 until arr.length()).map { arr.optString(it, "").trim() }.filter { it.isNotEmpty() }.take(8)
+    }
+
+    fun fetch(): String? = try {
+        val conn = URL(URL_DUYURU).openConnection() as HttpURLConnection
+        conn.connectTimeout = 8000
+        conn.readTimeout = 10000
+        conn.setRequestProperty("User-Agent", "EYMEN-OS")
+        if (conn.responseCode == 200) conn.inputStream.use { String(it.readBytes(), Charsets.UTF_8) } else null
+    } catch (e: Exception) {
+        null
+    }
+}
+
+object Qr {
+    fun make(text: String, size: Int = 512): Bitmap? = try {
+        val hints = HashMap<EncodeHintType, Any>()
+        hints[EncodeHintType.MARGIN] = 1
+        val m = QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, size, size, hints)
+        val pixels = IntArray(size * size)
+        for (y in 0 until size) {
+            for (x in 0 until size) {
+                pixels[y * size + x] = if (m.get(x, y)) 0xFF0A1224.toInt() else 0xFFFFFFFF.toInt()
+            }
+        }
+        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        bmp.setPixels(pixels, 0, size, 0, 0, size, size)
+        bmp
+    } catch (e: Exception) {
+        null
     }
 }

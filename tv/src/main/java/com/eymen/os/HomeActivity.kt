@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
@@ -43,6 +45,17 @@ class HomeActivity : ComponentActivity() {
         }
     }
 
+    /** "İnternete bağlı olunca": every time the TV reaches a network the update check runs. */
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            handler.post { if (::state.isInitialized) state.onNetwork(true) }
+        }
+
+        override fun onLost(network: Network) {
+            handler.post { if (::state.isInitialized) state.onNetwork(false) }
+        }
+    }
+
     private val packageReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (::state.isInitialized) state.reloadApps()
@@ -68,6 +81,17 @@ class HomeActivity : ComponentActivity() {
         ContextCompat.registerReceiver(this, screenReceiver, screen, ContextCompat.RECEIVER_EXPORTED)
         state.start()
         if (checkSelfPermission(LauncherState.PERM_TV) != PackageManager.PERMISSION_GRANTED) requestTvPermission()
+        try {
+            (getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager).registerDefaultNetworkCallback(networkCallback)
+        } catch (e: Exception) {
+        }
+        handleRequest(intent)
+    }
+
+    private fun handleRequest(intent: Intent?) {
+        val request = intent?.getStringExtra("guncelle") ?: return
+        intent.removeExtra("guncelle")
+        state.onRequest(request)
     }
 
     fun requestTvPermission() {
@@ -97,7 +121,10 @@ class HomeActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        if (::state.isInitialized) state.onHome()
+        if (::state.isInitialized) {
+            state.onHome()
+            handleRequest(intent)
+        }
     }
 
     private fun isSystemKey(code: Int): Boolean = when (code) {
@@ -144,6 +171,7 @@ class HomeActivity : ComponentActivity() {
         try {
             unregisterReceiver(packageReceiver)
             unregisterReceiver(screenReceiver)
+            (getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager).unregisterNetworkCallback(networkCallback)
         } catch (e: Exception) {
         }
         if (::state.isInitialized) state.onDestroy()

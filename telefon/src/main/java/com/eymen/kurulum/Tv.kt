@@ -77,11 +77,7 @@ class Tv(private val ctx: Context) {
             }
             2 -> yukle(File(ctx.cacheDir, "EYMEN-TV.apk"))
             3 -> yukle(File(ctx.cacheDir, "EYMEN-OS-TV.apk"))
-            4 -> {
-                komut("pm grant $OS android.permission.READ_TV_LISTINGS")
-                komut("pm grant $OS com.android.providers.tv.permission.READ_EPG_DATA")
-                komut("appops set $OS SYSTEM_ALERT_WINDOW allow")
-            }
+            4 -> izinler()
             5 -> {
                 val c = komut("cmd package set-home-activity $OS/.HomeActivity")
                 check(c.contains("Success", true)) { "Ana ekran ayarlanamadı: $c" }
@@ -97,6 +93,54 @@ class Tv(private val ctx: Context) {
                 komut("reboot")
             } catch (_: Exception) {
                 // TV yeniden başlarken bağlantının kopması normal.
+            }
+        }
+    }
+
+    private fun izinler() {
+        komut("pm grant $OS android.permission.READ_TV_LISTINGS")
+        komut("pm grant $OS com.android.providers.tv.permission.READ_EPG_DATA")
+        komut("appops set $OS SYSTEM_ALERT_WINDOW allow")
+        komut("appops set $OS REQUEST_INSTALL_PACKAGES allow")
+        komut("appops set $UYDU REQUEST_INSTALL_PACKAGES allow")
+        komut("pm grant $UYDU android.permission.READ_EXTERNAL_STORAGE")
+    }
+
+    /** TV'de daha yeni sürüm varsa kurulum atlanır: otomatik güncelleme önden gitmiş demektir. */
+    private fun guncelle(ad: String, ilerleme: (String) -> Unit) {
+        val f = cikar(ad, ilerleme)
+        ilerleme("$ad TV'ye kuruluyor")
+        try {
+            yukle(f)
+        } catch (e: Exception) {
+            if (e.message?.contains("DOWNGRADE") != true) throw e
+        }
+    }
+
+    /** Sadece uygulamaları yeniler. Yeniden başlatma yok, kanal ve ayarlar silinmez. */
+    fun hizliAdim(i: Int, ilerleme: (String) -> Unit) {
+        when (i) {
+            0 -> guncelle("EYMEN-TV.apk", ilerleme)
+            1 -> guncelle("EYMEN-OS-TV.apk", ilerleme)
+            2 -> {
+                izinler()
+                komut("settings delete global eymen_otomatik")
+                komut("am start -n $OS/.HomeActivity --es guncelle izin")
+                ilerleme("TV ekranına bak. Her zaman izin ver kutusunu işaretle, sonra İzin ver'e bas.")
+                var tamam = false
+                var kalan = 45
+                while (!tamam && kalan > 0) {
+                    Thread.sleep(2000)
+                    tamam = komut("settings get global eymen_otomatik").trim() == "1"
+                    kalan -= 1
+                }
+                ilerleme(if (tamam) "Otomatik güncelleme açıldı" else "TV izni gelmedi. Güncellemelerde ekranda Yükle onayı çıkacak.")
+            }
+            3 -> {
+                komut("cmd package set-home-activity $OS/.HomeActivity")
+                komut("am start -n $OS/.HomeActivity")
+                Thread.sleep(3000)
+                check(komut("pidof $OS").isNotBlank()) { "EYMEN OS açılmadı" }
             }
         }
     }
@@ -189,6 +233,8 @@ class Tv(private val ctx: Context) {
         val KORUNAN = setOf(OS, "android", "com.android.settings", "com.android.tv.settings")
         const val PORT = 5555
         const val OS = "com.eymen.os"
+        const val UYDU = "com.eymen.uydukontrol"
+        val HIZLI = listOf("EYMEN Uydu güncelleme", "EYMEN OS güncelleme", "Otomatik güncellemeyi açma", "Son kontrol")
         val ESKI = listOf("com.google.android.tvlauncher", "com.google.android.tvrecommendations")
         val ADIMLAR = listOf(
             "Dosyaları hazırlama", "Yedek liste", "EYMEN Uydu yükleme", "EYMEN OS yükleme",
