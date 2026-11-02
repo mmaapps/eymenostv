@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="enforcer_desc">TV açıldığında ve Ev tuşuna basıldığında eski ana ekran yerine EYMEN OS\'u açar. Ekrandaki yazıları okumaz.</string>
+</resources>
