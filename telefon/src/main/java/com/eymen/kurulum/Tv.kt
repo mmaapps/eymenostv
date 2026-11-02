@@ -31,7 +31,7 @@ class Tv(private val ctx: Context) {
         kapat()
         ip = adres
         // TV'de izin ekranı beklenebilir, bu yüzden okuma süresi uzun.
-        val d = Dadb.create(adres, PORT, anahtar(), 10_000, 180_000, true)
+        val d = Dadb.create(adres, PORT, anahtar(), 10_000, 300_000, true)
         val cevap = d.shell("echo EYMEN").allOutput
         check(cevap.contains("EYMEN")) { "TV yanıt vermedi" }
         adb = d
@@ -58,9 +58,16 @@ class Tv(private val ctx: Context) {
         return hedef
     }
 
-    private fun yukle(f: File) {
+    // dadb'nin akışlı install'i bazı TV'lerde bağlantıyı koparıyor; önce kopyala-sonra kur daha sağlam.
+    private fun yukle(f: File, ilerleme: (String) -> Unit) {
         val d = adb ?: throw IllegalStateException("TV bağlı değil")
-        d.install(f, "-r")
+        val uzak = "/data/local/tmp/${f.name}"
+        ilerleme("${f.name} TV'ye kopyalanıyor")
+        d.push(f, uzak)
+        ilerleme("${f.name} kuruluyor, bekle")
+        val r = d.shell("pm install -r $uzak").allOutput.trim()
+        try { d.shell("rm -f $uzak") } catch (_: Exception) { }
+        check(r.contains("Success", true)) { "Kurulamadı: ${r.take(180)}" }
     }
 
     /** Sıradaki adımı yapar. Hata atarsa [adim] değişmez, aynı yerden yeniden denenir. */
@@ -74,9 +81,13 @@ class Tv(private val ctx: Context) {
                 val liste = komut("pm list packages")
                 val ev = komut("cmd package resolve-activity --brief -c android.intent.category.HOME android.intent.action.MAIN")
                 File(ctx.filesDir, "tv-yedek.txt").writeText("Ana ekran:\n$ev\n\nPaketler:\n$liste\n")
+                try {
+                    komut("settings put global package_verifier_enable 0")
+                    komut("settings put global verifier_verify_adb_installs 0")
+                } catch (_: Exception) { }
             }
-            2 -> yukle(File(ctx.cacheDir, "EYMEN-TV.apk"))
-            3 -> yukle(File(ctx.cacheDir, "EYMEN-OS-TV.apk"))
+            2 -> yukle(File(ctx.cacheDir, "EYMEN-TV.apk"), ilerleme)
+            3 -> yukle(File(ctx.cacheDir, "EYMEN-OS-TV.apk"), ilerleme)
             4 -> izinler()
             5 -> {
                 val c = komut("cmd package set-home-activity $OS/.HomeActivity")
