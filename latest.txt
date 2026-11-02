@@ -1,0 +1,85 @@
+sha=cadd68b9c28991a6d7171872d5b818fbccfbbb8b
+build=success
+release=success
+---- errors
+---- tail
+> Task :tv:extractReleaseVersionControlInfo
+> Task :tv:collectReleaseDependencies
+> Task :tv:sdkReleaseDependencyData
+> Task :tv:validateSigningRelease
+> Task :tv:optimizeReleaseResources
+> Task :tv:writeReleaseAppMetadata
+> Task :tv:writeReleaseSigningConfigVersions
+> Task :tv:mergeExtDexRelease
+> Task :tv:compileReleaseKotlin
+> Task :tv:compileReleaseJavaWithJavac
+> Task :tv:dexBuilderRelease
+> Task :tv:mergeReleaseGlobalSynthetics
+> Task :tv:processReleaseJavaRes
+> Task :tv:mergeReleaseJavaResource
+> Task :tv:mergeDexRelease
+> Task :tv:compileReleaseArtProfile
+> Task :tv:packageRelease
+> Task :tv:createReleaseApkListingFileRedirect
+> Task :tv:assembleRelease
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/build-1793650036191.json
+
+BUILD SUCCESSFUL in 53s
+45 actionable tasks: 45 executed
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :telefon:preBuild UP-TO-DATE
+> Task :telefon:preReleaseBuild UP-TO-DATE
+> Task :telefon:mergeReleaseJniLibFolders
+> Task :telefon:mergeReleaseNativeLibs NO-SOURCE
+> Task :telefon:stripReleaseDebugSymbols NO-SOURCE
+> Task :telefon:extractReleaseNativeSymbolTables NO-SOURCE
+> Task :telefon:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :telefon:checkReleaseDuplicateClasses
+> Task :telefon:buildKotlinToolingMetadata
+> Task :telefon:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :telefon:checkReleaseAarMetadata
+> Task :telefon:generateReleaseResValues
+> Task :telefon:mapReleaseSourceSetPaths
+> Task :telefon:generateReleaseResources
+> Task :telefon:packageReleaseResources
+> Task :telefon:createReleaseCompatibleScreenManifests
+> Task :telefon:extractDeepLinksRelease
+> Task :telefon:mergeReleaseResources
+> Task :telefon:parseReleaseLocalResources
+> Task :telefon:processReleaseMainManifest
+> Task :telefon:processReleaseManifest
+> Task :telefon:javaPreCompileRelease
+> Task :telefon:processReleaseManifestForPackage
+> Task :telefon:desugarReleaseFileDependencies
+> Task :telefon:mergeReleaseStartupProfile
+> Task :telefon:mergeReleaseArtProfile
+> Task :telefon:mergeReleaseShaders
+> Task :telefon:compileReleaseShaders NO-SOURCE
+> Task :telefon:generateReleaseAssets UP-TO-DATE
+> Task :telefon:processReleaseResources
+> Task :telefon:mergeReleaseAssets
+> Task :telefon:extractReleaseVersionControlInfo
+> Task :telefon:optimizeReleaseResources
+> Task :telefon:compressReleaseAssets
+> Task :telefon:collectReleaseDependencies
+> Task :telefon:sdkReleaseDependencyData
+> Task :telefon:validateSigningRelease
+> Task :telefon:writeReleaseAppMetadata
+> Task :telefon:writeReleaseSigningConfigVersions
+> Task :telefon:mergeExtDexRelease
+> Task :telefon:compileReleaseKotlin
+> Task :telefon:compileReleaseJavaWithJavac NO-SOURCE
+> Task :telefon:dexBuilderRelease
+> Task :telefon:mergeReleaseGlobalSynthetics
+> Task :telefon:processReleaseJavaRes
+> Task :telefon:mergeReleaseJavaResource
+> Task :telefon:mergeDexRelease
+> Task :telefon:compileReleaseArtProfile
+> Task :telefon:packageRelease
+> Task :telefon:createReleaseApkListingFileRedirect
+> Task :telefon:assembleRelease
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/build-1793650089748.json
+
+BUILD SUCCESSFUL in 22s
+40 actionable tasks: 40 executed
