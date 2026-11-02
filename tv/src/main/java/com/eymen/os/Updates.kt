@@ -109,12 +109,20 @@ class UpdateManager(
                 val version = Regex("(\\d+(?:\\.\\d+)+)").find(json.optString("tag_name", ""))?.value ?: continue
                 val installed = versionOf(s.pkg)
                 if (installed != null && !newer(version, installed)) continue
+                if (s.pkg == ctx.packageName && version == skipped()) continue
                 val url = "https://github.com/${s.repo}/releases/download/${json.optString("tag_name")}/${s.asset}"
                 out.add(UpdateItem(s.label, s.pkg, installed, version, url, notes(json.optString("body", ""))))
             } catch (e: Exception) {
             }
         }
         return if (reached) out else null
+    }
+
+    /** A version that crashed on this TV and was taken back is not offered again. */
+    private fun skipped(): String? = try {
+        Settings.Global.getString(ctx.contentResolver, SKIP_SETTING)
+    } catch (e: Exception) {
+        null
     }
 
     private fun notes(body: String): List<String> =
@@ -281,24 +289,23 @@ class UpdateManager(
     }
 
     /**
-     * Installing itself kills this process, so the job goes to a shell that outlives it.
-     * The shell also puts EYMEN OS back as home screen and opens it.
+     * Installing itself kills this process, so the job goes to a script that outlives it. The
+     * script opens EYMEN OS again and, if the new version crashes, puts the old one back so the
+     * TV never stays without a home screen.
      */
     private suspend fun installSelf(adb: Dadb, item: UpdateItem) {
         val file = item.file ?: throw IOException("dosya yok")
-        val pkg = ctx.packageName
-        val remote = "/data/local/tmp/eymen-os.apk"
-        val log = "/data/local/tmp/eymen-os.log"
-        adb.push(file, remote, 420, System.currentTimeMillis())
-        adb.shell("rm -f $log")
-        val script = "pm install -r $remote > $log 2>&1; rm -f $remote; " +
-            "cmd package set-home-activity $pkg/.HomeActivity > /dev/null 2>&1; sleep 1; " +
-            "am start -n $pkg/.HomeActivity > /dev/null 2>&1"
-        adb.shell("nohup sh -c \"$script\" < /dev/null > /dev/null 2>&1 &")
+        val dir = "/data/local/tmp"
+        val script = File(ctx.cacheDir, "eymen-guncelle.sh")
+        script.writeText(selfScript(ctx.packageName, item.version))
+        adb.push(file, "$dir/eymen-os.apk", 420, System.currentTimeMillis())
+        adb.push(script, "$dir/eymen-guncelle.sh", 493, System.currentTimeMillis())
+        adb.shell("rm -f $dir/eymen-os.log")
+        adb.shell("nohup sh $dir/eymen-guncelle.sh < /dev/null > /dev/null 2>&1 &")
         repeat(90) {
             delay(1000)
             val answer = try {
-                adb.shell("cat $log 2>/dev/null").allOutput
+                adb.shell("cat $dir/eymen-os.log 2>/dev/null").allOutput
             } catch (e: Exception) {
                 ""
             }
@@ -306,6 +313,31 @@ class UpdateManager(
         }
         throw IOException("kurulum yanıt vermedi")
     }
+
+    private fun selfScript(pkg: String, version: String): String = listOf(
+        "d=/data/local/tmp",
+        "eski=\$(pm path $pkg | head -n 1 | cut -d: -f2)",
+        "cp \"\$eski\" \$d/eymen-os-eski.apk",
+        "t=\$(date '+%m-%d %H:%M:%S.000')",
+        "pm install -r \$d/eymen-os.apk > \$d/eymen-os.log 2>&1",
+        "rm -f \$d/eymen-os.apk",
+        "cmd package set-home-activity $pkg/.HomeActivity > /dev/null 2>&1",
+        "sleep 1",
+        "am start -n $pkg/.HomeActivity > /dev/null 2>&1",
+        "sleep 25",
+        "if logcat -d -b crash -T \"\$t\" | grep -q 'Process: $pkg'; then",
+        "  pm uninstall $pkg",
+        "  pm install \$d/eymen-os-eski.apk",
+        "  pm grant $pkg android.permission.READ_TV_LISTINGS",
+        "  pm grant $pkg com.android.providers.tv.permission.READ_EPG_DATA",
+        "  appops set $pkg SYSTEM_ALERT_WINDOW allow",
+        "  appops set $pkg REQUEST_INSTALL_PACKAGES allow",
+        "  settings put global $SKIP_SETTING $version",
+        "  cmd package set-home-activity $pkg/.HomeActivity",
+        "  am start -n $pkg/.HomeActivity",
+        "fi",
+        "rm -f \$d/eymen-os-eski.apk"
+    ).joinToString("\n") + "\n"
 
     private fun lastLine(s: String): String = s.lines().map { it.trim() }.lastOrNull { it.isNotEmpty() } ?: "bilinmeyen hata"
 
@@ -365,6 +397,7 @@ class UpdateManager(
 
     companion object {
         private const val ADB_PORT = 5555
+        private const val SKIP_SETTING = "eymen_atla"
         const val UYDU_PKG = "com.eymen.uydukontrol"
         private val SOURCES = listOf(
             Source("EYMEN OS", "com.eymen.os", "mmaapps/eymenostv", "EYMEN-OS-TV.apk"),

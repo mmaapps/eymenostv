@@ -81,7 +81,7 @@ fun LauncherRoot(s: LauncherState) {
                 Screen.HUB -> HubScreen(s)
                 Screen.SETUP -> SetupScreen(s)
                 Screen.UPDATE -> UpdateScreen(s)
-                Screen.ABOUT -> AboutScreen(s)
+                Screen.ABOUT -> AboutScreen()
             }
             if (s.qrOpen) QrOverlay(s)
             if (s.noticeVisible) UpdateNotice(s)

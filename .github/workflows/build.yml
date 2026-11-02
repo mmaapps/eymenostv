@@ -2,7 +2,7 @@ name: EYMEN OS TV derle ve yayınla
 
 on:
   push:
-    branches: [main, surum-1.1]
+    branches: [main]
   workflow_dispatch:
 
 permissions:

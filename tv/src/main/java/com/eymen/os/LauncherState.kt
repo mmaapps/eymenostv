@@ -214,6 +214,7 @@ class LauncherState(val activity: HomeActivity) {
     fun onRequest(request: String) {
         when (request) {
             "izin" -> scope.launch {
+                toast("TV'de çıkan pencerede Her zaman izin ver'i işaretle, İzin ver'e bas", 12000L)
                 var tries = 0
                 while (updates.busy() && tries < 20) {
                     delay(500L)

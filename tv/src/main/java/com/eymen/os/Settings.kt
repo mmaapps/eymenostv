@@ -126,7 +126,6 @@ private class HubCard(val title: String, val value: String, val color: Color, va
 @Composable
 fun HubScreen(s: LauncherState) {
     val u = s.updates
-    val tick = s.refreshKey
     val waiting = u.items.isNotEmpty()
     val cards = listOf(
         HubCard("Güncelleme", if (waiting) "Yeni sürüm hazır" else "Güncel · ${BuildConfig.VERSION_NAME}", C.Gold, I_UPDATE, "Sürümü gör, şimdi denetle, otomatik güncellemeyi aç ya da kapat."),
@@ -153,7 +152,7 @@ fun HubScreen(s: LauncherState) {
                 T(s.time(s.now), 26, C.Fg, 500, display = true)
             }
             Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                StatusPanel(s, waiting, tick)
+                StatusPanel(s, waiting)
                 Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     for (r in 0 until 3) {
                         Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -175,7 +174,7 @@ fun HubScreen(s: LauncherState) {
 }
 
 @Composable
-private fun StatusPanel(s: LauncherState, waiting: Boolean, tick: Int) {
+private fun StatusPanel(s: LauncherState, waiting: Boolean) {
     val turning = rememberInfiniteTransition(label = "durum")
     val angle by turning.animateFloat(0f, 360f, infiniteRepeatable(tween(7000, easing = LinearEasing)), label = "halka")
     val ring = if (waiting) C.Gold else C.Mint
@@ -226,7 +225,7 @@ private fun StatusPanel(s: LauncherState, waiting: Boolean, tick: Int) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Box(Modifier.size(8.dp).background(if (s.updates.auto) C.Mint else C.Dim, RoundedCornerShape(4.dp)))
-            T(if (s.updates.auto) "Otomatik güncelleme açık" else "Otomatik güncelleme kapalı" + "".take(tick * 0), 13, C.Fg2, 600)
+            T(if (s.updates.auto) "Otomatik güncelleme açık" else "Otomatik güncelleme kapalı", 13, C.Fg2, 600)
         }
     }
 }
@@ -450,7 +449,7 @@ private fun AppLine(label: String, s: LauncherState, pkg: String, modifier: Modi
 }
 
 @Composable
-fun AboutScreen(s: LauncherState) {
+fun AboutScreen() {
     val (sign, site) = signatureMotion()
     Box(Modifier.fillMaxSize().background(nightGround), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -466,7 +465,7 @@ fun AboutScreen(s: LauncherState) {
                 T("Atasoy Yazılım · atasoyyazilim.com", 17, C.Mut, 500, spacing = 1f)
             }
             Spacer(Modifier.height(10.dp))
-            T("Geri: Ayarlar" + "".take(s.hubIndex * 0), 13, C.Dim, 600)
+            T("Geri: Ayarlar", 13, C.Dim, 600)
         }
     }
 }
