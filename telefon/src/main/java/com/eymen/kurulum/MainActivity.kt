@@ -17,6 +17,7 @@ import kotlin.concurrent.thread
 
 class MainActivity : Activity() {
     private lateinit var tv: Tv
+    private var kurulumVar = false
     private lateinit var kok: LinearLayout
     private val zemin = Color.parseColor("#0A1224")
     private val kart = Color.parseColor("#17213D")
@@ -87,7 +88,20 @@ class MainActivity : Activity() {
             thread {
                 try {
                     tv.baglan(ip)
-                    runOnUiThread { kurulum() }
+                    runOnUiThread { if (tv.adim > 0 || !kurulumVar) kurulum() else komutlar() }
+                } catch (e: Throwable) {
+                    runOnUiThread { wifiKoptu("Bağlanamadı: ${e.message ?: e.javaClass.simpleName}") }
+                }
+            }
+        }
+        dugme("Sadece bağlan, kurulum yapma", false) {
+            kurulumVar = true
+            d.text = "Bağlanıyor..."
+            val ip = g.text.toString().trim()
+            thread {
+                try {
+                    tv.baglan(ip)
+                    runOnUiThread { komutlar() }
                 } catch (e: Throwable) {
                     runOnUiThread { wifiKoptu("Bağlanamadı: ${e.message ?: e.javaClass.simpleName}") }
                 }
@@ -169,6 +183,19 @@ class MainActivity : Activity() {
                 runOnUiThread { cikti.text = "$k\n\n$c" }
             }
         }
+        fun calistir(f: () -> String) {
+            cikti.text = "Çalışıyor, bekle..."
+            thread {
+                val c = try {
+                    f()
+                } catch (e: Throwable) {
+                    "Hata: ${e.message}. Önce TV'ye bağlan."
+                }
+                runOnUiThread { cikti.text = c }
+            }
+        }
+        dugme("Ana ekranı EYMEN OS yap") { calistir { tv.anaEkraniOnar() } }
+        dugme("Durumu kontrol et", false) { calistir { tv.durum() } }
         dugme("Wi-Fi durumu", false) { gonder("cmd wifi status") }
         dugme("TV'de Wi-Fi ayarını aç", false) { gonder("am start -a android.settings.WIFI_SETTINGS") }
         dugme("EYMEN OS'u aç", false) { gonder("am start -n ${Tv.OS}/.HomeActivity") }
@@ -185,7 +212,7 @@ class MainActivity : Activity() {
             if (k.isNotEmpty()) gonder(k)
         }
         ekle(cikti)
-        dugme("TV'ye bağlan") { baglanti() }
+        dugme("TV'ye bağlan") { kurulumVar = true; baglanti() }
     }
 
     // ------------------------------------------------------- parçalar
