@@ -79,6 +79,8 @@ fun LauncherRoot(s: LauncherState) {
             when (s.screen) {
                 Screen.HOME -> HomeScreen(s)
                 Screen.HUB -> HubScreen(s)
+                Screen.GELISMIS -> GelismisScreen(s)
+                Screen.YANSITMA -> YansitmaScreen(s)
                 Screen.SETUP -> SetupScreen(s)
                 Screen.UPDATE -> UpdateScreen(s)
                 Screen.ABOUT -> AboutScreen()
