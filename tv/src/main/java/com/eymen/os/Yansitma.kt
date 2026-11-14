@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
@@ -162,10 +163,12 @@ object Yansitma {
 private fun YansitmaIkon(boyut: Int, renk: Color) {
     val path = remember { PathParser().parsePathString(Yansitma.SIMGE).toPath() }
     Canvas(Modifier.size(boyut.dp)) {
-        drawPath(
-            path, renk,
-            style = Stroke(width = 2.3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
-        )
+        scale(size.width / 24f, pivot = Offset.Zero) {
+            drawPath(
+                path, renk,
+                style = Stroke(width = 2.3f, cap = StrokeCap.Round, join = StrokeJoin.Round),
+            )
+        }
     }
 }
 
@@ -267,7 +270,7 @@ fun YansitmaScreen(s: LauncherState) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         YansitmaDugme("Yansıtmayı başlat", s.yansitmaOdak == 0)
                         YansitmaDugme(
-                            if (s.prefs.getBoolean("yansitmaKisayol", false)) "Kısayolu kaldır" else "Ana ekrana kısayol",
+                            if (s.yansitmaKisayol) "Kısayolu kaldır" else "Ana ekrana kısayol",
                             s.yansitmaOdak == 1,
                         )
                         YansitmaDugme("Yeniden tara", s.yansitmaOdak == 2)
@@ -326,7 +329,7 @@ fun YansitmaScreen(s: LauncherState) {
                         } else {
                             "Hızlı ayarlarda Yansıtma, Ekran yansıtma ya da Cast düğmesine dokun."
                         })
-                        YansitmaAdimi("3", "Listeden '${adi}'nu seç, TV'de çıkan onayı OK ile kabul et.")
+                        YansitmaAdimi("3", "Listeden ${adi}'nu seç, TV'de çıkan onayı OK ile kabul et.")
                     }
                 }
             }
