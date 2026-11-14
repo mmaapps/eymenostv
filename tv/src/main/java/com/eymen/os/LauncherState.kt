@@ -68,6 +68,40 @@ class LauncherState(val activity: HomeActivity) {
     var usbVar by mutableStateOf(false)
     var panelAcik by mutableStateOf(false)
     var panelIndex by mutableStateOf(0)
+    var panelUykuIndex by mutableStateOf(0)
+    var uykuBitis by mutableStateOf(prefs.getLong("uykuBitis",0L))
+    var uykuUyarildi by mutableStateOf(false)
+    var koruyucuAcik by mutableStateOf(false)
+    var koruyucuKilit by mutableStateOf("")
+    var koruyucuKayma by mutableStateOf(0)
+    var koruyucuHava by mutableStateOf<Hava?>(null)
+    var koruyucuIndex by mutableStateOf(0)
+    var koruyucuSehirSecimi by mutableStateOf(false)
+    var sonTus = System.currentTimeMillis()
+    var geceIzin = false
+    var kilitOturumu by mutableStateOf(false)
+    var pinIstek by mutableStateOf<PinIstek?>(null)
+    var kilitIndex by mutableStateOf(0)
+    var kilitListeTur by mutableStateOf(0)
+    var sistemIndex by mutableStateOf(0)
+    var sistemBilgi by mutableStateOf<SistemBilgi?>(null)
+    var temizleniyor by mutableStateOf(false)
+    var hizOlculuyor by mutableStateOf(false)
+    var hizDeger by mutableStateOf<Int?>(null)
+    var gecikme by mutableStateOf<Long?>(null)
+    var usbAd by mutableStateOf("")
+    var usbIzinDenendi = false
+    var usbToplam by mutableStateOf(0L)
+    var usbDolu by mutableStateOf(0L)
+    var usbFiles by mutableStateOf<List<MedyaDosya>>(emptyList())
+    var usbTur by mutableStateOf(0)
+    var usbIndex by mutableStateOf(0)
+    var usbSekmeOdak by mutableStateOf(true)
+    var usbGorsel by mutableStateOf<Uri?>(null)
+    var usbImageBitmap by mutableStateOf<ImageBitmap?>(null)
+    var yedekIndex by mutableStateOf(0)
+    var kumandaIndex by mutableStateOf(0)
+    private var pinAtla = false
     var online by mutableStateOf(false)
     val updates = UpdateManager(ctx, prefs, scope)
     var updateRow by mutableStateOf(0)
@@ -127,6 +161,28 @@ class LauncherState(val activity: HomeActivity) {
         }
         reloadApps()
         taraYansitma()
+        UsbMedya.tara(this)
+        scope.launch { Sistem.olc(this@LauncherState) }
+        scope.launch { Sistem.derle(this@LauncherState) }
+        scope.launch {
+            while (isActive) {
+                HizliPanel.tick(this@LauncherState)
+                EkranKoruyucu.ticks(this@LauncherState)
+                delay(30000L)
+            }
+        }
+        scope.launch {
+            while (isActive) {
+                CocukKilidi.dakika(this@LauncherState)
+                delay(60000L)
+            }
+        }
+        scope.launch {
+            while (isActive) {
+                EkranKoruyucu.havaGetir(this@LauncherState)
+                delay(30 * 60000L)
+            }
+        }
         inputs.clear()
         inputs.addAll(Channels.inputs(ctx))
         scope.launch {
@@ -154,6 +210,20 @@ class LauncherState(val activity: HomeActivity) {
         if (seen != BuildConfig.VERSION_NAME) {
             if (seen.isNotEmpty()) toast("EYMEN OS ${BuildConfig.VERSION_NAME} sürümüne güncellendi", 7000L)
             prefs.edit().putString("seenVersion", BuildConfig.VERSION_NAME).apply()
+        }
+    }
+
+    fun launchTask(block: suspend () -> Unit) {
+        scope.launch { block() }
+    }
+
+    fun tumKanallar(): List<Ch> = allChannels
+
+    fun resumePreview() {
+        val cur = current
+        if (cur != null && visibleNow && screen == Screen.HOME &&
+            !koruyucuAcik && !CocukKilidi.kanalKilitli(this, cur)) {
+            preview.play(cur, !soundOn)
         }
     }
 
