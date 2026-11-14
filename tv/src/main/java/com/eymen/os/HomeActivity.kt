@@ -24,6 +24,15 @@ class HomeActivity : ComponentActivity() {
         if (::state.isInitialized) state.reloadChannels()
     }
 
+    private var ilkOdakOlculdu = false
+    private val usbReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (::state.isInitialized) {
+                state.launchTask { UsbMedya.tara(state, intent?.action == Intent.ACTION_MEDIA_MOUNTED) }
+            }
+        }
+    }
+
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private val reassert = Runnable { bringToFront() }
 
@@ -79,6 +88,13 @@ class HomeActivity : ComponentActivity() {
         screen.addAction(Intent.ACTION_SCREEN_ON)
         screen.addAction(Intent.ACTION_USER_PRESENT)
         ContextCompat.registerReceiver(this, screenReceiver, screen, ContextCompat.RECEIVER_EXPORTED)
+        val usb = IntentFilter().apply {
+            addAction(Intent.ACTION_MEDIA_MOUNTED)
+            addAction(Intent.ACTION_MEDIA_UNMOUNTED)
+            addAction(Intent.ACTION_MEDIA_EJECT)
+            addDataScheme("file")
+        }
+        ContextCompat.registerReceiver(this, usbReceiver, usb, ContextCompat.RECEIVER_EXPORTED)
         state.start()
         if (checkSelfPermission(LauncherState.PERM_TV) != PackageManager.PERMISSION_GRANTED) requestTvPermission()
         try {
@@ -115,7 +131,13 @@ class HomeActivity : ComponentActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) hideSystemUi()
+        if (hasFocus) {
+            hideSystemUi()
+            if (!ilkOdakOlculdu && ::state.isInitialized) {
+                ilkOdakOlculdu = true
+                Sistem.acilis(state)
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -171,6 +193,7 @@ class HomeActivity : ComponentActivity() {
         try {
             unregisterReceiver(packageReceiver)
             unregisterReceiver(screenReceiver)
+            unregisterReceiver(usbReceiver)
             (getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager).unregisterNetworkCallback(networkCallback)
         } catch (e: Exception) {
         }
