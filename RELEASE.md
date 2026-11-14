@@ -1,15 +1,17 @@
-# EYMEN OS TV 1.1.1
+# EYMEN OS TV 1.2.0
 
 Vestel 17MB170 / Android 11 TV için EYMEN OS.
 
-- Yeni sürümler artık TV'ye kendiliğinden gelir, ekranda imzalı güncelleme uyarısı çıkar
-- Ayarlar ekranı renkli kartlarla ve anlık durum bilgisiyle yenilendi
-- Ana ekranın altına Atasoy Yazılım bandı eklendi, OK ile QR kod açılır
-- EYMEN Uydu'da eklediğin logolar ana ekranda da görünür
+- Ayarlar'a Gelişmiş sekmesi eklendi
+- Ekran yansıtma otomatik algılanır, TV'de varsa Ayarlar'da görünür
+- Mavi tuşla açılan hızlı panel: ses, uyku zamanlayıcı, yansıtma, Wi-Fi
+- Çocuk kilidi, ekran koruyucu, USB medya ve sistem araçları
+- Daha hızlı açılış: simge önbelleği ve derleme iyileştirmeleri
+- EYMEN Kurulum'a telefondan kumanda ve yedekleme eklendi
 
 Dosyalar:
 
-`EYMEN-Kurulum.apk`: telefona kurulur. İlk kurulumu ve Hızlı güncelle'yi yapar.
+`EYMEN-Kurulum.apk`: telefona kurulur. İlk kurulumu, Hızlı güncelle'yi, kumandayı ve yedeği yapar.
 `EYMEN-OS-TV.apk`: TV uygulaması. Kurulum uygulamasının içinde de gelir.
 
 Geri dönüş: Telefon > Komut Merkezi > "Eski ekranı geri getir, EYMEN OS'u kaldır".
