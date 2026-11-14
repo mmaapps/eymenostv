@@ -22,7 +22,7 @@ import java.net.URL
 import java.text.Normalizer
 import java.util.Locale
 
-enum class Screen { HOME, HUB, SETUP, UPDATE, ABOUT }
+enum class Screen { HOME, HUB, SETUP, UPDATE, ABOUT, GELISMIS, YANSITMA, KILIT, SISTEM, KORUYUCU_AYAR, USB, YEDEK, KUMANDA }
 
 class AppEntry(val pkg: String, val label: String) {
     var banner by mutableStateOf<ImageBitmap?>(null)
