@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Ekran Yansıtma</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Sora:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#E8C27A}a:hover{color:#F2D9A6}
+.btn{height:46px;border-radius:13px;padding:0 18px;display:flex;align-items:center;gap:8px;font:inherit;font-size:15px;font-weight:800;color:#F2F4F8;background:rgba(214,226,255,.08);border:1px solid rgba(214,226,255,.2);cursor:pointer}
+.chk{display:flex;align-items:center;gap:12px;height:52px;border-top:1px solid #26324F;font-size:14px}
+.dot{width:26px;height:26px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex:none}
+.step{display:flex;gap:12px;align-items:flex-start;font-size:14px;line-height:20px;color:#C9D0DD;font-weight:600}
+.n{width:26px;height:26px;border-radius:8px;background:#E8C27A;color:#1E1505;font-family:'Sora',sans-serif;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none}
+</style>
+</helmet>
+<div style="width:1280px;height:720px;box-sizing:border-box;padding:28px 64px 18px;display:flex;flex-direction:column;gap:18px;font-family:'Manrope',sans-serif;color:#F2F4F8;background:radial-gradient(120% 120% at 85% 0%,#14204A 0%,#070B16 55%,#05080F 100%)">
+  <div style="height:48px;display:flex;align-items:center;gap:12px">
+    <div style="width:36px;height:36px;border-radius:10px;background:#E8C27A;color:#1E1505;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:700;font-size:20px">E</div>
+    <div style="font-family:'Sora',sans-serif;font-size:30px;font-weight:600">Ekran Yansıtma</div>
+    <span style="margin-left:8px;font-size:13px;color:#A3ACBF;font-weight:600">Ayarlar › Gelişmiş</span>
+    <div style="flex:1"></div>
+    <div style="font-size:14px;color:#A3ACBF;font-weight:500">Cumartesi, 14 Kasım</div>
+    <div style="font-family:'Sora',sans-serif;font-size:26px;font-weight:500;margin-left:14px">21:41</div>
+  </div>
+
+  <div style="flex:1;display:flex;gap:20px;min-height:0">
+    <div style="flex:1.15;box-sizing:border-box;border-radius:18px;border:1px solid #26324F;background:#101A33;padding:30px 32px;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;align-items:center;gap:26px">
+        <div style="width:150px;height:150px;border-radius:50%;border:1px solid rgba(111,168,255,.18);display:flex;align-items:center;justify-content:center;flex:none">
+          <div style="width:118px;height:118px;border-radius:50%;border:1px solid rgba(111,168,255,.35);display:flex;align-items:center;justify-content:center">
+            <div style="width:84px;height:84px;border-radius:24px;background:#6FA8FF;display:flex;align-items:center;justify-content:center">
+              <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#0A1224" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M2 20h.01"/></svg>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:12px;font-weight:800;color:#7BE08A;letter-spacing:2px">HAZIR · BAĞLANTI BEKLENİYOR</div>
+          <div style="font-family:'Sora',sans-serif;font-size:32px;font-weight:600;line-height:40px">Telefonunu TV'ye yansıt</div>
+          <div style="font-size:15px;color:#A3ACBF;font-weight:500">Telefonda bu adı seç:</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:2px">
+            <span style="font-family:'Sora',sans-serif;font-size:22px;font-weight:600;color:#E8C27A">EYMEN TV · Salon</span>
+            <span style="font-size:12px;font-weight:700;color:#A3ACBF;border:1px solid #3A4A72;border-radius:999px;padding:3px 10px">Adı değiştir</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" style="background:#F2F4F8;color:#0A1224;border-color:transparent;transform:scale(1.05);box-shadow:0 14px 30px rgba(0,0,0,.5)"><svg width="13" height="13" viewBox="0 0 24 24" fill="#0A1224" aria-hidden="true"><path d="M6 3l15 9-15 9z"/></svg>Yansıtmayı başlat</button>
+        <button class="btn">Ana ekrana kısayol</button>
+        <button class="btn">Yeniden tara</button>
+      </div>
+      <div style="flex:1"></div>
+      <div style="display:flex;gap:14px">
+        <div style="flex:1;background:#17213D;border-radius:12px;padding:14px 16px">
+          <div style="font-size:12px;color:#A3ACBF;font-weight:700;letter-spacing:1px">AÇILINCA</div>
+          <div style="font-size:15px;font-weight:700;margin-top:4px">Canlı önizleme durur, ses karışmaz</div>
+        </div>
+        <div style="flex:1;background:#17213D;border-radius:12px;padding:14px 16px">
+          <div style="font-size:12px;color:#A3ACBF;font-weight:700;letter-spacing:1px">BİTİNCE</div>
+          <div style="font-size:15px;font-weight:700;margin-top:4px">Geri tuşuyla EYMEN OS'a dönülür</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:430px;display:flex;flex-direction:column;gap:16px">
+      <div style="box-sizing:border-box;border-radius:18px;border:1px solid #26324F;background:#101A33;padding:18px 20px 6px">
+        <div style="font-family:'Sora',sans-serif;font-size:18px;font-weight:600;margin-bottom:8px">Algılama sonucu</div>
+        <div class="chk"><span class="dot" style="background:#7BE08A"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A1224" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg></span><span style="flex:1;font-weight:700">Wi-Fi Direct donanımı</span><span style="color:#7BE08A;font-weight:800">Var</span></div>
+        <div class="chk"><span class="dot" style="background:#7BE08A"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A1224" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg></span><span style="flex:1;font-weight:700">TV'nin yansıtma uygulaması</span><span style="color:#7BE08A;font-weight:800">Bulundu</span></div>
+        <div class="chk"><span class="dot" style="background:#7BE08A"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A1224" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg></span><span style="flex:1;font-weight:700">Sistem yansıtma menüsü</span><span style="color:#7BE08A;font-weight:800">Var</span></div>
+        <div class="chk"><span class="dot" style="background:#3A4459"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9D0DD" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></span><span style="flex:1;font-weight:700;color:#C9D0DD">Google Cast alıcısı</span><span style="color:#A3ACBF;font-weight:800">Yok</span></div>
+      </div>
+      <div style="flex:1;box-sizing:border-box;border-radius:18px;border:1px solid #26324F;background:#101A33;padding:18px 20px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:'Sora',sans-serif;font-size:18px;font-weight:600;flex:1">Telefondan bağlan</span>
+          <span style="font-size:12px;font-weight:800;padding:5px 12px;border-radius:999px;background:#E8C27A;color:#1E1505">Samsung</span>
+          <span style="font-size:12px;font-weight:800;padding:5px 12px;border-radius:999px;border:1px solid #3A4A72;color:#C9D0DD">Diğer Android</span>
+        </div>
+        <div class="step"><span class="n">1</span><span>Telefonla TV aynı Wi-Fi ağında olsun.</span></div>
+        <div class="step"><span class="n">2</span><span>Ekranın üstünden aşağı kaydır, <b style="color:#F2F4F8">Smart View</b> düğmesine dokun.</span></div>
+        <div class="step"><span class="n">3</span><span>Listeden <b style="color:#E8C27A">EYMEN TV · Salon</b>'u seç, TV'de çıkan onayı OK ile kabul et.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:24px;display:flex;align-items:center;gap:16px;font-size:13px;font-weight:600;color:#A3ACBF">
+    <span style="flex:1;font-size:14px;font-weight:700;color:#F2F4F8">TV'nin kendi yansıtma ekranını açar. Bağlantı bitince EYMEN OS'a geri dönülür.</span>
+    <span>OK seç</span><a href="Gelismis.dc.html" style="color:#A3ACBF;text-decoration:none">Geri: Gelişmiş</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

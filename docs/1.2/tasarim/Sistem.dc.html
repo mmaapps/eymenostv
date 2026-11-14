@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Sistem araçları ve hız</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Sora:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#E8C27A}a:hover{color:#F2D9A6}
+.card{box-sizing:border-box;border-radius:18px;border:1px solid #26324F;background:#101A33;padding:20px;display:flex;flex-direction:column;gap:12px}
+.h{font-family:'Sora',sans-serif;font-size:18px;font-weight:600}
+.cap{font-size:12px;font-weight:800;color:#A3ACBF;letter-spacing:1px}
+.big{font-family:'Sora',sans-serif;font-size:34px;font-weight:600;line-height:40px}
+.btn{height:42px;border-radius:12px;padding:0 16px;font:inherit;font-size:14px;font-weight:800;color:#F2F4F8;background:rgba(214,226,255,.08);border:1px solid rgba(214,226,255,.2);cursor:pointer;align-self:flex-start}
+.li{display:flex;align-items:center;gap:14px;height:56px;border-top:1px solid #26324F}
+.lt{font-size:15px;font-weight:800}
+.ls{font-size:12px;font-weight:600;color:#A3ACBF;margin-top:2px}
+.tg{width:48px;height:28px;border-radius:14px;position:relative;flex:none}
+.tg span{position:absolute;top:3px;width:22px;height:22px;border-radius:11px;background:#F2F4F8}
+</style>
+</helmet>
+<div style="width:1280px;height:720px;box-sizing:border-box;padding:28px 64px 18px;display:flex;flex-direction:column;gap:18px;font-family:'Manrope',sans-serif;color:#F2F4F8;background:radial-gradient(120% 120% at 85% 0%,#14204A 0%,#070B16 55%,#05080F 100%)">
+  <div style="height:48px;display:flex;align-items:center;gap:12px">
+    <div style="width:36px;height:36px;border-radius:10px;background:#E8C27A;color:#1E1505;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:700;font-size:20px">E</div>
+    <div style="font-family:'Sora',sans-serif;font-size:30px;font-weight:600">Sistem araçları</div>
+    <span style="margin-left:8px;font-size:13px;color:#A3ACBF;font-weight:600">Ayarlar › Gelişmiş</span>
+    <div style="flex:1"></div>
+    <div style="font-family:'Sora',sans-serif;font-size:26px;font-weight:500">21:44</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;height:230px">
+    <div class="card">
+      <div class="cap">DEPOLAMA</div>
+      <div class="big">5,1 <span style="font-size:18px;color:#A3ACBF">/ 8 GB dolu</span></div>
+      <div style="height:10px;border-radius:5px;background:#26324F;display:flex;overflow:hidden"><span style="width:44%;background:#7FB2FF"></span><span style="width:12%;background:#F5B85C"></span><span style="width:8%;background:#A9B2FF"></span></div>
+      <div style="display:flex;gap:14px;font-size:12px;font-weight:700;color:#C9D0DD">
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:#7FB2FF"></span>Uygulamalar</span>
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:#F5B85C"></span>Önbellek</span>
+        <span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:#A9B2FF"></span>Diğer</span>
+      </div>
+    </div>
+    <div class="card" style="background:#F2F4F8;color:#0A1224;border:3px solid #7FD8F0;box-shadow:0 14px 36px rgba(0,0,0,.55)">
+      <div class="cap" style="color:#3A4459">ÖNBELLEK</div>
+      <div class="big">960 MB</div>
+      <div style="font-size:13px;font-weight:600;color:#3A4459">Uygulamaların geçici dosyaları. Silmek hiçbir ayarı bozmaz.</div>
+      <div style="flex:1"></div>
+      <button class="btn" style="background:#0A1224;color:#F2F4F8;border-color:transparent">Temizle</button>
+    </div>
+    <div class="card">
+      <div class="cap">İNTERNET HIZI</div>
+      <div style="display:flex;align-items:flex-end;gap:12px">
+        <div class="big">— <span style="font-size:18px;color:#A3ACBF">Mbps</span></div>
+      </div>
+      <div style="font-size:13px;font-weight:600;color:#A3ACBF">İndirme hızı ve gecikme ölçülür. 4K yayın için 25 Mbps önerilir.</div>
+      <div style="flex:1"></div>
+      <button class="btn">Testi başlat</button>
+    </div>
+  </div>
+
+  <div style="flex:1;display:flex;gap:16px;min-height:0">
+    <div class="card" style="flex:1.4;padding:16px 20px 4px;gap:4px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <div style="width:34px;height:34px;border-radius:10px;background:#C6E27A;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A1224" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 14l4-4"/><path d="M3.3 19a10 10 0 1 1 17.4 0"/></svg></div>
+        <div class="h" style="flex:1">Hız ve performans</div>
+        <span style="font-size:12px;font-weight:800;color:#7BE08A">Hızlı mod açık</span>
+      </div>
+      <div class="li"><div style="flex:1"><div class="lt">Hızlı açılış</div><div class="ls">Simgeler ve logolar hafızada tutulur, ana ekran anında dolar</div></div><div class="tg" style="background:#1B7A33"><span style="right:3px"></span></div></div>
+      <div class="li"><div style="flex:1"><div class="lt">Önizlemeyi sonra başlat</div><div class="ls">Canlı pencere ana ekran açıldıktan sonra başlar</div></div><div class="tg" style="background:#1B7A33"><span style="right:3px"></span></div></div>
+      <div class="li"><div style="flex:1"><div class="lt">Hafif animasyonlar</div><div class="ls">Yavaş TV'lerde dönen dişli ve büyüme efektlerini azaltır</div></div><div class="tg" style="background:#3A4459"><span style="left:3px"></span></div></div>
+    </div>
+    <div class="card" style="flex:1">
+      <div class="cap">SON 5 AÇILIŞ</div>
+      <div style="display:flex;gap:10px;align-items:flex-end;height:96px">
+        <div style="width:30px;height:70px;border-radius:6px;background:#3A4459"></div>
+        <div style="width:30px;height:58px;border-radius:6px;background:#3A4459"></div>
+        <div style="width:30px;height:62px;border-radius:6px;background:#3A4459"></div>
+        <div style="width:30px;height:54px;border-radius:6px;background:#3A4459"></div>
+        <div style="width:30px;height:50px;border-radius:6px;background:#7BE08A"></div>
+        <div style="flex:1;padding-bottom:2px"><div style="font-family:'Sora',sans-serif;font-size:26px;font-weight:600">— sn</div><div style="font-size:12px;font-weight:600;color:#A3ACBF">Son açılış · yeşil çubuk</div></div>
+      </div>
+      <div style="font-size:13px;font-weight:600;color:#C9D0DD">TV her açılışta süreyi ölçer. Değerler 1.2.0 kurulduktan sonra dolar.</div>
+      <div style="flex:1"></div>
+      <button class="btn">Arka plandaki uygulamaları kapat</button>
+    </div>
+  </div>
+
+  <div style="height:24px;display:flex;align-items:center;gap:16px;font-size:13px;font-weight:600;color:#A3ACBF">
+    <span style="flex:1;font-size:14px;font-weight:700;color:#F2F4F8">Önbelleği temizler. Uygulamalar bir sonraki açılışta biraz yavaş açılabilir.</span>
+    <span>OK seç</span><span>Geri: Gelişmiş</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

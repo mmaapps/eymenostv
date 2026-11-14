@@ -12,8 +12,8 @@ android {
         applicationId = "com.eymen.os"
         minSdk = 26
         targetSdk = 34
-        versionCode = 7
-        versionName = "1.1.1"
+        versionCode = 8
+        versionName = "1.2.0"
     }
 
     signingConfigs {
@@ -28,7 +28,9 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
         }
         debug {
@@ -75,4 +77,5 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer-hls:1.4.1")
     implementation("dev.mobile:dadb:1.2.10")
     implementation("com.google.zxing:core:3.5.3")
+    implementation("androidx.profileinstaller:profileinstaller:1.3.1")
 }

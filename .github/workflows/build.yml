@@ -3,13 +3,20 @@ name: EYMEN OS TV derle ve yayınla
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'AGENTS.md'
+      - '.github/kurallar/**'
+      - '.github/workflows/kural-denetimi.yml'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: eymen-os
+  group: eymen-os-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -18,6 +25,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Kural denetimi (AGENTS.md, docs/1.2/SARTNAME.md)
+        run: python3 .github/kurallar/denetle.py
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -46,7 +55,7 @@ jobs:
           test -s telefon/build/outputs/apk/release/telefon-release.apk
       - name: Kararlı sürümü yayınla
         id: release
-        if: steps.build.outcome == 'success' && github.ref == 'refs/heads/main'
+        if: steps.build.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -63,8 +72,16 @@ jobs:
           else
             gh release create "$TAG" dist/*.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "EYMEN OS TV $VERSION" --notes-file RELEASE.md --latest
           fi
+      - name: Test APK'larını sakla
+        if: github.event_name == 'pull_request' && steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: EYMEN-OS-test-apk
+          path: |
+            tv/build/outputs/apk/release/tv-release.apk
+            telefon/build/outputs/apk/release/telefon-release.apk
       - name: Sonucu ci-logs dalına yaz
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         shell: bash
         env:
           BUILD_RESULT: ${{ steps.build.outcome }}

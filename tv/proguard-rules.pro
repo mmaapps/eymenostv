@@ -1,0 +1,6 @@
+-keep class com.eymen.os.** { *; }
+-keep class dadb.** { *; }
+-keepclassmembers class * { @androidx.compose.runtime.Composable *; }
+-dontwarn org.bouncycastle.**
+-dontwarn org.conscrypt.**
+-dontwarn org.openjsse.**

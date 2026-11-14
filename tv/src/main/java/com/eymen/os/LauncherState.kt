@@ -31,6 +31,8 @@ import java.text.Collator
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlin.math.max
 
 class LauncherState(val activity: HomeActivity) {
@@ -43,6 +45,7 @@ class LauncherState(val activity: HomeActivity) {
 
     var screen by mutableStateOf(Screen.HOME)
     val apps = mutableStateListOf<AppEntry>()
+    private val yansitmaGiris = AppEntry("eymen:yansitma", "Ekran Yansıtma")
     val hidden = mutableStateListOf<String>()
     val channels = mutableStateListOf<Ch>()
     private var allChannels: List<Ch> = emptyList()
@@ -56,6 +59,49 @@ class LauncherState(val activity: HomeActivity) {
     /** Which list the plain settings screen shows: start-up settings or hidden apps. */
     var setupApps by mutableStateOf(false)
     var hubIndex by mutableStateOf(0)
+    var gelIndex by mutableStateOf(0)
+    var sekmeOdak by mutableStateOf(false)
+    var yansitma by mutableStateOf(YansitmaSonuc.kayit(prefs.getString("yansitmaSonuc", null)))
+    var yansitmaOdak by mutableStateOf(0)
+    var yansitmaTur by mutableStateOf(0)
+    var yansitmaKisayol by mutableStateOf(prefs.getBoolean("yansitmaKisayol", false))
+    var usbVar by mutableStateOf(false)
+    var panelAcik by mutableStateOf(false)
+    var panelIndex by mutableStateOf(0)
+    var panelUykuIndex by mutableStateOf(0)
+    var uykuBitis by mutableStateOf(prefs.getLong("uykuBitis",0L))
+    var uykuUyarildi by mutableStateOf(false)
+    var koruyucuAcik by mutableStateOf(false)
+    var koruyucuKilit by mutableStateOf("")
+    var koruyucuKayma by mutableStateOf(0)
+    var koruyucuHava by mutableStateOf<Hava?>(null)
+    var koruyucuIndex by mutableStateOf(0)
+    var koruyucuSehirSecimi by mutableStateOf(false)
+    var sonTus = System.currentTimeMillis()
+    var geceIzin = false
+    var kilitOturumu by mutableStateOf(false)
+    var pinIstek by mutableStateOf<PinIstek?>(null)
+    var kilitIndex by mutableStateOf(0)
+    var kilitListeTur by mutableStateOf(0)
+    var sistemIndex by mutableStateOf(0)
+    var sistemBilgi by mutableStateOf<SistemBilgi?>(null)
+    var temizleniyor by mutableStateOf(false)
+    var hizOlculuyor by mutableStateOf(false)
+    var hizDeger by mutableStateOf<Int?>(null)
+    var gecikme by mutableStateOf<Long?>(null)
+    var usbAd by mutableStateOf("")
+    var usbIzinDenendi = false
+    var usbToplam by mutableStateOf(0L)
+    var usbDolu by mutableStateOf(0L)
+    var usbFiles by mutableStateOf<List<MedyaDosya>>(emptyList())
+    var usbTur by mutableStateOf(0)
+    var usbIndex by mutableStateOf(0)
+    var usbSekmeOdak by mutableStateOf(true)
+    var usbGorsel by mutableStateOf<Uri?>(null)
+    var usbImageBitmap by mutableStateOf<ImageBitmap?>(null)
+    var yedekIndex by mutableStateOf(0)
+    var kumandaIndex by mutableStateOf(0)
+    private var pinAtla = false
     var online by mutableStateOf(false)
     val updates = UpdateManager(ctx, prefs, scope)
     var updateRow by mutableStateOf(0)
@@ -98,7 +144,45 @@ class LauncherState(val activity: HomeActivity) {
     // ------------------------------------------------------------ loading
 
     fun start() {
+        if (prefs.getBoolean("hizliAcilis", true)) {
+            try {
+                val kayit = JSONArray(prefs.getString("uygulamaListesi", "[]") ?: "[]")
+                val liste = ArrayList<AppEntry>()
+                for (i in 0 until kayit.length()) {
+                    val item = kayit.optJSONObject(i) ?: continue
+                    val pkg = item.optString("p")
+                    val label = item.optString("l")
+                    if (pkg.isNotBlank() && label.isNotBlank()) liste.add(AppEntry(pkg, label))
+                }
+                apps.clear()
+                apps.addAll(liste)
+            } catch (_: Exception) {
+            }
+        }
         reloadApps()
+        taraYansitma()
+        UsbMedya.tara(this)
+        scope.launch { Sistem.olc(this@LauncherState) }
+        scope.launch { Sistem.derle(this@LauncherState) }
+        scope.launch {
+            while (isActive) {
+                HizliPanel.tick(this@LauncherState)
+                EkranKoruyucu.ticks(this@LauncherState)
+                delay(30000L)
+            }
+        }
+        scope.launch {
+            while (isActive) {
+                CocukKilidi.dakika(this@LauncherState)
+                delay(60000L)
+            }
+        }
+        scope.launch {
+            while (isActive) {
+                EkranKoruyucu.havaGetir(this@LauncherState)
+                delay(30 * 60000L)
+            }
+        }
         inputs.clear()
         inputs.addAll(Channels.inputs(ctx))
         scope.launch {
@@ -127,6 +211,65 @@ class LauncherState(val activity: HomeActivity) {
             if (seen.isNotEmpty()) toast("EYMEN OS ${BuildConfig.VERSION_NAME} sürümüne güncellendi", 7000L)
             prefs.edit().putString("seenVersion", BuildConfig.VERSION_NAME).apply()
         }
+    }
+
+    fun launchTask(block: suspend () -> Unit) {
+        scope.launch { block() }
+    }
+
+    fun tumKanallar(): List<Ch> = allChannels
+
+    fun resumePreview() {
+        val cur = current
+        if (cur != null && visibleNow && screen == Screen.HOME &&
+            !koruyucuAcik && !CocukKilidi.kanalKilitli(this, cur)) {
+            preview.play(cur, !soundOn)
+        }
+    }
+
+    /** Rechecks the TV's built-in screen mirroring receivers. */
+    fun taraYansitma() {
+        scope.launch {
+            val sonuc = Yansitma.tara(ctx)
+            yansitma = sonuc
+            prefs.edit().putString("yansitmaSonuc", sonuc.json()).apply()
+        }
+    }
+
+    /** Uses the original protected launch flow to suspend the live preview. */
+    fun openMirrorIntent(intent: Intent) {
+        launch(intent)
+    }
+
+    private fun yansitmaKey(code: Int): Boolean {
+        when {
+            code == KeyEvent.KEYCODE_DPAD_UP -> yansitmaOdak = 3
+            code == KeyEvent.KEYCODE_DPAD_DOWN -> yansitmaOdak = 0
+            code == KeyEvent.KEYCODE_DPAD_LEFT -> {
+                if (yansitmaOdak == 4) yansitmaTur = 0
+                else yansitmaOdak = (yansitmaOdak - 1).coerceAtLeast(0)
+            }
+            code == KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                if (yansitmaOdak == 4) yansitmaTur = 1
+                else yansitmaOdak = if (yansitmaOdak >= 2) 4 else yansitmaOdak + 1
+            }
+            isOk(code) -> when (yansitmaOdak) {
+                0 -> Yansitma.ac(this)
+                1 -> {
+                    val yeni = !prefs.getBoolean("yansitmaKisayol", false)
+                    prefs.edit().putBoolean("yansitmaKisayol", yeni).apply()
+                    yansitmaKisayol = yeni
+                }
+                2 -> taraYansitma()
+                3 -> Yansitma.adiDegistir(this)
+            }
+            code == KeyEvent.KEYCODE_BACK -> {
+                screen = Screen.GELISMIS
+                gelIndex = 0
+            }
+            else -> return false
+        }
+        return true
     }
 
     // ------------------------------------------------------------ updates
@@ -271,7 +414,8 @@ class LauncherState(val activity: HomeActivity) {
         screen = Screen.HOME
         row = 1
         col = 0
-        current?.let { preview.play(it, !soundOn) }
+        resumePreview()
+        kilitOturumu = false
         offerNotice()
     }
 
@@ -283,13 +427,81 @@ class LauncherState(val activity: HomeActivity) {
     }
 
     private fun hubKey(code: Int): Boolean {
+        if (sekmeOdak) {
+            when {
+                code == KeyEvent.KEYCODE_DPAD_RIGHT -> openGelismis()
+                code == KeyEvent.KEYCODE_DPAD_LEFT -> screen = Screen.HUB
+                code == KeyEvent.KEYCODE_DPAD_DOWN -> { sekmeOdak = false; hubIndex = 0 }
+                isOk(code) -> {}
+                code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU ||
+                    code == KeyEvent.KEYCODE_SETTINGS -> closeHub()
+                else -> return false
+            }
+            return true
+        }
         when {
             code == KeyEvent.KEYCODE_DPAD_LEFT -> if (hubIndex % 3 > 0) hubIndex -= 1
             code == KeyEvent.KEYCODE_DPAD_RIGHT -> if (hubIndex % 3 < 2) hubIndex += 1
-            code == KeyEvent.KEYCODE_DPAD_UP -> if (hubIndex >= 3) hubIndex -= 3
+            code == KeyEvent.KEYCODE_DPAD_UP -> {
+                if (hubIndex < 3) sekmeOdak = true else hubIndex -= 3
+            }
             code == KeyEvent.KEYCODE_DPAD_DOWN -> if (hubIndex < 6) hubIndex += 3
             isOk(code) -> hubAction(hubIndex)
-            code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU || code == KeyEvent.KEYCODE_SETTINGS -> closeHub()
+            code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU ||
+                code == KeyEvent.KEYCODE_SETTINGS -> closeHub()
+            else -> return false
+        }
+        return true
+    }
+
+    fun openGelismis() {
+        screen = Screen.GELISMIS
+        prefs.edit().putBoolean("gelismisGoruldu", true).apply()
+        taraYansitma()
+    }
+
+    private fun gelKey(code: Int): Boolean {
+        if (sekmeOdak) {
+            when {
+                code == KeyEvent.KEYCODE_DPAD_LEFT -> screen = Screen.HUB
+                code == KeyEvent.KEYCODE_DPAD_RIGHT || isOk(code) -> {}
+                code == KeyEvent.KEYCODE_DPAD_DOWN -> { sekmeOdak = false; gelIndex = 0 }
+                code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU ||
+                    code == KeyEvent.KEYCODE_SETTINGS -> closeHub()
+                else -> return false
+            }
+            return true
+        }
+        val kartlar = gelKartlar(this)
+        when {
+            code == KeyEvent.KEYCODE_DPAD_LEFT -> if (gelIndex % 3 > 0) gelIndex--
+            code == KeyEvent.KEYCODE_DPAD_RIGHT -> if (gelIndex % 3 < 2 &&
+                gelIndex + 1 < kartlar.size) gelIndex++
+            code == KeyEvent.KEYCODE_DPAD_UP -> {
+                if (gelIndex < 3) sekmeOdak = true else gelIndex -= 3
+            }
+            code == KeyEvent.KEYCODE_DPAD_DOWN -> if (gelIndex + 3 < kartlar.size) gelIndex += 3
+            isOk(code) -> when (kartlar.getOrNull(gelIndex)?.id) {
+                0 -> { yansitmaOdak = 0; screen = Screen.YANSITMA }
+                1 -> { closeHub(); panelAcik = true; panelIndex = 0 }
+                2 -> CocukKilidi.ayar(this)
+                3 -> { koruyucuIndex = 0; screen = Screen.KORUYUCU_AYAR }
+                4 -> {
+                    usbIndex = 0
+                    usbSekmeOdak = true
+                    screen = Screen.USB
+                    launchTask { UsbMedya.yukle(this@LauncherState) }
+                }
+                5, 6 -> {
+                    sistemIndex = if (kartlar.getOrNull(gelIndex)?.id == 6) 3 else 0
+                    screen = Screen.SISTEM
+                    launchTask { Sistem.olc(this@LauncherState) }
+                }
+                7 -> { yedekIndex = 0; screen = Screen.YEDEK }
+                8 -> { kumandaIndex = 0; screen = Screen.KUMANDA }
+            }
+            code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU ||
+                code == KeyEvent.KEYCODE_SETTINGS -> closeHub()
             else -> return false
         }
         return true
@@ -328,6 +540,12 @@ class LauncherState(val activity: HomeActivity) {
                 val rb = rank[b.pkg] ?: Int.MAX_VALUE
                 if (ra != rb) ra.compareTo(rb) else collator.compare(a.label, b.label)
             }
+            try {
+                val kayit = JSONArray()
+                for (a in sorted) kayit.put(JSONObject().put("p", a.pkg).put("l", a.label))
+                prefs.edit().putString("uygulamaListesi", kayit.toString()).apply()
+            } catch (_: Exception) {
+            }
             val old = apps.associateBy { it.pkg }
             apps.clear()
             for (a in sorted) {
@@ -363,7 +581,10 @@ class LauncherState(val activity: HomeActivity) {
             channels.clear()
             channels.addAll(rowList)
             current = cur
-            if (visibleNow && cur != null && screen == Screen.HOME) preview.play(cur, !soundOn)
+            if (visibleNow && cur != null && screen == Screen.HOME) {
+                if (CocukKilidi.kanalKilitli(this@LauncherState, cur)) preview.stop()
+                else if (!koruyucuAcik) preview.play(cur, !soundOn)
+            }
             refreshEpg()
         }
     }
@@ -391,7 +612,9 @@ class LauncherState(val activity: HomeActivity) {
         if (ch.logoRequested) return
         ch.logoRequested = true
         scope.launch {
-            val bmp = withContext(Dispatchers.IO) { Logos.load(ctx, ch) }
+            val bmp = withContext(Dispatchers.IO) {
+                IkonOnbellegi.logo(ctx, ch, prefs.getBoolean("hizliAcilis", true))
+            }
             if (bmp != null) ch.logo = bmp.asImageBitmap()
         }
     }
@@ -400,7 +623,14 @@ class LauncherState(val activity: HomeActivity) {
         if (app.requested) return
         app.requested = true
         scope.launch {
-            val (banner, icon) = withContext(Dispatchers.IO) { Apps.graphics(ctx, app.pkg) }
+            if (app.pkg == "eymen:yansitma") {
+                val ikon = withContext(Dispatchers.Default) { Yansitma.ikonBitmap() }
+                app.icon = ikon.asImageBitmap()
+                return@launch
+            }
+            val (banner, icon) = withContext(Dispatchers.IO) {
+                IkonOnbellegi.graphics(ctx, app.pkg, prefs.getBoolean("hizliAcilis", true))
+            }
             if (banner != null) app.banner = banner.asImageBitmap()
             if (icon != null) app.icon = icon.asImageBitmap()
         }
@@ -408,7 +638,10 @@ class LauncherState(val activity: HomeActivity) {
 
     // ------------------------------------------------------------ lists
 
-    fun visibleApps(): List<AppEntry> = apps.filter { !hidden.contains(it.pkg) }
+    fun visibleApps(): List<AppEntry> {
+        val bulunanlar = apps.filter { !hidden.contains(it.pkg) }
+        return if (yansitmaKisayol) listOf(yansitmaGiris) + bulunanlar else bulunanlar
+    }
 
     fun appsRowSize(): Int = visibleApps().size + inputs.size
 
@@ -432,6 +665,12 @@ class LauncherState(val activity: HomeActivity) {
     }
 
     fun openEymen(ch: Ch?, open: String?) {
+        if (ch != null && CocukKilidi.kanalKilitli(this, ch) && !pinAtla) {
+            if (CocukKilidi.koruma(this, ch.name) {
+                pinAtla = true
+                try { openEymen(ch, open) } finally { pinAtla = false }
+            }) return
+        }
         val intent = Apps.launchIntent(ctx, Channels.EYMEN_PKG)
         if (intent == null) {
             toast("EYMEN Uydu yüklü değil")
@@ -460,6 +699,16 @@ class LauncherState(val activity: HomeActivity) {
     }
 
     fun launchApp(app: AppEntry) {
+        if (CocukKilidi.uygulamaKilitli(this, app.pkg) && !pinAtla) {
+            if (CocukKilidi.koruma(this, app.label) {
+                pinAtla = true
+                try { launchApp(app) } finally { pinAtla = false }
+            }) return
+        }
+        if (app.pkg == "eymen:yansitma") {
+            Yansitma.ac(this)
+            return
+        }
         val intent = Apps.launchIntent(ctx, app.pkg)
         if (intent == null) {
             toast("${app.label} açılamadı")
@@ -507,7 +756,8 @@ class LauncherState(val activity: HomeActivity) {
         val ch = list[i]
         current = ch
         prefs.edit().putString("last", ch.key).apply()
-        preview.play(ch, !soundOn)
+        if (CocukKilidi.kanalKilitli(this, ch)) preview.stop()
+        else if (!koruyucuAcik) preview.play(ch, !soundOn)
         refreshEpg()
     }
 
@@ -638,12 +888,24 @@ class LauncherState(val activity: HomeActivity) {
             noticeKey(code)
             return true
         }
+        if (pinIstek != null) return CocukKilidi.pinKey(this, code)
+        if (koruyucuAcik) return EkranKoruyucu.key(this, code)
         if (qrOpen) {
             if (isOk(code) || code == KeyEvent.KEYCODE_BACK) qrOpen = false
             return true
         }
+        if (panelAcik) return HizliPanel.key(this, code)
+        sonTus = System.currentTimeMillis()
         when (screen) {
             Screen.HUB -> return hubKey(code)
+            Screen.YANSITMA -> return yansitmaKey(code)
+            Screen.GELISMIS -> return gelKey(code)
+            Screen.KILIT -> return CocukKilidi.key(this, code)
+            Screen.SISTEM -> return Sistem.key(this, code)
+            Screen.KORUYUCU_AYAR -> return EkranKoruyucu.ayarKey(this, code)
+            Screen.USB -> return UsbMedya.key(this, code)
+            Screen.YEDEK -> return YedekMenusu.key(this, code)
+            Screen.KUMANDA -> return KumandaBilgi.key(this, code)
             Screen.UPDATE -> return updateKey(code)
             Screen.ABOUT -> {
                 if (isOk(code) || code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU) screen = Screen.HUB
@@ -663,6 +925,11 @@ class LauncherState(val activity: HomeActivity) {
                 code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU -> closeSetup()
                 else -> return false
             }
+            return true
+        }
+        if (screen == Screen.HOME && moving == null && code == KeyEvent.KEYCODE_PROG_BLUE) {
+            panelAcik = true
+            panelIndex = 0
             return true
         }
         val mv = moving
@@ -699,14 +966,14 @@ class LauncherState(val activity: HomeActivity) {
             isOk(code) -> activate()
             code == KeyEvent.KEYCODE_PROG_YELLOW -> {
                 val app = visibleApps().getOrNull(col)
-                if (row == 3 && app != null) {
+                if (row == 3 && app != null && app.pkg != "eymen:yansitma") {
                     moving = app.pkg
                     toast("◀ ▶ ile taşı, OK ile bırak")
                 }
             }
             code == KeyEvent.KEYCODE_PROG_RED -> {
                 val app = visibleApps().getOrNull(col)
-                if (row == 3 && app != null) {
+                if (row == 3 && app != null && app.pkg != "eymen:yansitma") {
                     toggleHide(app.pkg)
                     col = col.coerceIn(0, max(0, appsRowSize() - 1))
                     toast("${app.label} gizlendi · Kurulum'dan geri getirilir")
@@ -753,6 +1020,7 @@ class LauncherState(val activity: HomeActivity) {
             return
         }
         moving = null
+        kilitOturumu = false
         row = 1
         col = 0
     }
@@ -790,6 +1058,8 @@ class LauncherState(val activity: HomeActivity) {
 
     fun onStop() {
         visibleNow = false
+        panelAcik = false
+        koruyucuAcik = false
         hideNotice()
         preview.stop()
     }

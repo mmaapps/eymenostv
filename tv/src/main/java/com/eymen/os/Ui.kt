@@ -79,11 +79,22 @@ fun LauncherRoot(s: LauncherState) {
             when (s.screen) {
                 Screen.HOME -> HomeScreen(s)
                 Screen.HUB -> HubScreen(s)
+                Screen.GELISMIS -> GelismisScreen(s)
+                Screen.YANSITMA -> YansitmaScreen(s)
+                Screen.KILIT -> CocukKilidiScreen(s)
+                Screen.SISTEM -> SistemScreen(s)
+                Screen.KORUYUCU_AYAR -> EkranKoruyucuAyarScreen(s)
+                Screen.USB -> UsbMedyaScreen(s)
+                Screen.YEDEK -> YedekScreen(s)
+                Screen.KUMANDA -> KumandaBilgiScreen(s)
                 Screen.SETUP -> SetupScreen(s)
                 Screen.UPDATE -> UpdateScreen(s)
                 Screen.ABOUT -> AboutScreen()
             }
+            if (s.panelAcik) HizliPanelScreen(s)
             if (s.qrOpen) QrOverlay(s)
+            if (s.koruyucuAcik) EkranKoruyucuScreen(s)
+            if (s.pinIstek != null) PinPanel(s)
             if (s.noticeVisible) UpdateNotice(s)
             val t = s.toastText
             if (t != null) {
@@ -138,7 +149,12 @@ private fun HomeScreen(s: LauncherState) {
                     T("EYMEN Uydu'yu bir kez açınca kanallar burada görünür.", 13, C.Mut, 500, maxLines = 2, align = TextAlign.Center)
                 }
             } else {
-                if (s.preview.status.isNotEmpty()) {
+                if (CocukKilidi.kanalKilitli(s, cur)) {
+                    Box(Modifier.align(Alignment.Center).panel(Color(0xCC0A1224),12)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        T("Kilitli kanal · OK ile PIN gir",14,C.Fg,600)
+                    }
+                } else if (s.preview.status.isNotEmpty()) {
                     Box(Modifier.align(Alignment.Center).panel(Color(0xCC0A1224), 12).padding(horizontal = 16.dp, vertical = 8.dp)) {
                         T(s.preview.status, 14, C.Fg, 600)
                     }
@@ -237,7 +253,7 @@ private fun SettingsPill(s: LauncherState) {
     val statusColor = if (waiting) (if (focused) Color(0xFF8A5A00) else C.Gold) else (if (focused) Color(0xFF1B7A33) else C.Mint)
     Row(
         Modifier.height(42.dp)
-            .scale(if (focused) 1.06f else 1f)
+            .scale(if (focused && !s.prefs.getBoolean("hafifAnimasyon",false)) 1.06f else 1f)
             .then(if (focused) Modifier.shadow(14.dp, RoundedCornerShape(21.dp)) else Modifier)
             .panel(if (focused) C.Fg else C.Tile, 21, if (focused) null else C.Gold, 2)
             .padding(start = 4.dp, end = 14.dp),
@@ -245,14 +261,18 @@ private fun SettingsPill(s: LauncherState) {
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Box(Modifier.size(32.dp).panel(C.Gold, 16), contentAlignment = Alignment.Center) {
-            Box(Modifier.graphicsLayer { rotationZ = turn }) {
+            Box(Modifier.graphicsLayer {
+                rotationZ = if(s.prefs.getBoolean("hafifAnimasyon",false)) 0f else turn
+            }) {
                 GearIcon(21, C.FocusInk)
             }
         }
         Column {
             T("Ayarlar", 14, if (focused) C.FocusInk else C.Fg, 800)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Box(Modifier.size(6.dp).graphicsLayer { alpha = beat }.background(statusColor, RoundedCornerShape(3.dp)))
+                Box(Modifier.size(6.dp).graphicsLayer {
+                    alpha = if(s.prefs.getBoolean("hafifAnimasyon",false)) 1f else beat
+                }.background(statusColor, RoundedCornerShape(3.dp)))
                 T(if (waiting) "Güncelleme var" else "Güncel", 11, statusColor, 700)
             }
         }
@@ -423,6 +443,12 @@ private fun AppTile(s: LauncherState, app: AppEntry, focused: Boolean, moving: B
                 Image(bitmap = icon, contentDescription = app.label, contentScale = ContentScale.Fit, modifier = Modifier.size(52.dp))
             } else {
                 T(app.label.take(1).uppercase(trLocale), 24, C.Fg, 700, display = true)
+            }
+            if (CocukKilidi.uygulamaKilitli(s, app.pkg)) {
+                Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(22.dp)
+                    .panel(Color(0xCC05080F),999), contentAlignment = Alignment.Center) {
+                    GelIkon(I_LOCK,12,C.Fg)
+                }
             }
             if (moving) {
                 Box(Modifier.align(Alignment.TopCenter).padding(top = 4.dp).panel(C.Gold, 6).padding(horizontal = 6.dp, vertical = 2.dp)) {
