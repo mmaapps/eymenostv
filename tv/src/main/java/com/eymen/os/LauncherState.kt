@@ -45,6 +45,7 @@ class LauncherState(val activity: HomeActivity) {
 
     var screen by mutableStateOf(Screen.HOME)
     val apps = mutableStateListOf<AppEntry>()
+    private val yansitmaGiris = AppEntry("eymen:yansitma", "Ekran Yansıtma")
     val hidden = mutableStateListOf<String>()
     val channels = mutableStateListOf<Ch>()
     private var allChannels: List<Ch> = emptyList()
@@ -539,6 +540,11 @@ class LauncherState(val activity: HomeActivity) {
         if (app.requested) return
         app.requested = true
         scope.launch {
+            if (app.pkg == "eymen:yansitma") {
+                val ikon = withContext(Dispatchers.Default) { Yansitma.ikonBitmap() }
+                app.icon = ikon.asImageBitmap()
+                return@launch
+            }
             val (banner, icon) = withContext(Dispatchers.IO) {
                 IkonOnbellegi.graphics(ctx, app.pkg, prefs.getBoolean("hizliAcilis", true))
             }
@@ -549,7 +555,10 @@ class LauncherState(val activity: HomeActivity) {
 
     // ------------------------------------------------------------ lists
 
-    fun visibleApps(): List<AppEntry> = apps.filter { !hidden.contains(it.pkg) }
+    fun visibleApps(): List<AppEntry> {
+        val bulunanlar = apps.filter { !hidden.contains(it.pkg) }
+        return if (yansitmaKisayol) listOf(yansitmaGiris) + bulunanlar else bulunanlar
+    }
 
     fun appsRowSize(): Int = visibleApps().size + inputs.size
 
@@ -601,6 +610,10 @@ class LauncherState(val activity: HomeActivity) {
     }
 
     fun launchApp(app: AppEntry) {
+        if (app.pkg == "eymen:yansitma") {
+            Yansitma.ac(this)
+            return
+        }
         val intent = Apps.launchIntent(ctx, app.pkg)
         if (intent == null) {
             toast("${app.label} açılamadı")
@@ -842,14 +855,14 @@ class LauncherState(val activity: HomeActivity) {
             isOk(code) -> activate()
             code == KeyEvent.KEYCODE_PROG_YELLOW -> {
                 val app = visibleApps().getOrNull(col)
-                if (row == 3 && app != null) {
+                if (row == 3 && app != null && app.pkg != "eymen:yansitma") {
                     moving = app.pkg
                     toast("◀ ▶ ile taşı, OK ile bırak")
                 }
             }
             code == KeyEvent.KEYCODE_PROG_RED -> {
                 val app = visibleApps().getOrNull(col)
-                if (row == 3 && app != null) {
+                if (row == 3 && app != null && app.pkg != "eymen:yansitma") {
                     toggleHide(app.pkg)
                     col = col.coerceIn(0, max(0, appsRowSize() - 1))
                     toast("${app.label} gizlendi · Kurulum'dan geri getirilir")
