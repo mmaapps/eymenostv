@@ -414,7 +414,8 @@ class LauncherState(val activity: HomeActivity) {
         screen = Screen.HOME
         row = 1
         col = 0
-        current?.let { preview.play(it, !soundOn) }
+        resumePreview()
+        kilitOturumu = false
         offerNotice()
     }
 
@@ -483,12 +484,21 @@ class LauncherState(val activity: HomeActivity) {
             isOk(code) -> when (kartlar.getOrNull(gelIndex)?.id) {
                 0 -> { yansitmaOdak = 0; screen = Screen.YANSITMA }
                 1 -> { closeHub(); panelAcik = true; panelIndex = 0 }
-                2 -> screen = Screen.KILIT
-                3 -> screen = Screen.KORUYUCU_AYAR
-                4 -> screen = Screen.USB
-                5, 6 -> screen = Screen.SISTEM
-                7 -> screen = Screen.YEDEK
-                8 -> screen = Screen.KUMANDA
+                2 -> CocukKilidi.ayar(this)
+                3 -> { koruyucuIndex = 0; screen = Screen.KORUYUCU_AYAR }
+                4 -> {
+                    usbIndex = 0
+                    usbSekmeOdak = true
+                    screen = Screen.USB
+                    launchTask { UsbMedya.yukle(this@LauncherState) }
+                }
+                5, 6 -> {
+                    sistemIndex = if (kartlar.getOrNull(gelIndex)?.id == 6) 3 else 0
+                    screen = Screen.SISTEM
+                    launchTask { Sistem.olc(this@LauncherState) }
+                }
+                7 -> { yedekIndex = 0; screen = Screen.YEDEK }
+                8 -> { kumandaIndex = 0; screen = Screen.KUMANDA }
             }
             code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU ||
                 code == KeyEvent.KEYCODE_SETTINGS -> closeHub()
@@ -571,7 +581,10 @@ class LauncherState(val activity: HomeActivity) {
             channels.clear()
             channels.addAll(rowList)
             current = cur
-            if (visibleNow && cur != null && screen == Screen.HOME) preview.play(cur, !soundOn)
+            if (visibleNow && cur != null && screen == Screen.HOME) {
+                if (CocukKilidi.kanalKilitli(this@LauncherState, cur)) preview.stop()
+                else if (!koruyucuAcik) preview.play(cur, !soundOn)
+            }
             refreshEpg()
         }
     }
@@ -652,6 +665,12 @@ class LauncherState(val activity: HomeActivity) {
     }
 
     fun openEymen(ch: Ch?, open: String?) {
+        if (ch != null && CocukKilidi.kanalKilitli(this, ch) && !pinAtla) {
+            if (CocukKilidi.koruma(this, ch.name) {
+                pinAtla = true
+                try { openEymen(ch, open) } finally { pinAtla = false }
+            }) return
+        }
         val intent = Apps.launchIntent(ctx, Channels.EYMEN_PKG)
         if (intent == null) {
             toast("EYMEN Uydu yüklü değil")
@@ -680,6 +699,12 @@ class LauncherState(val activity: HomeActivity) {
     }
 
     fun launchApp(app: AppEntry) {
+        if (CocukKilidi.uygulamaKilitli(this, app.pkg) && !pinAtla) {
+            if (CocukKilidi.koruma(this, app.label) {
+                pinAtla = true
+                try { launchApp(app) } finally { pinAtla = false }
+            }) return
+        }
         if (app.pkg == "eymen:yansitma") {
             Yansitma.ac(this)
             return
@@ -731,7 +756,8 @@ class LauncherState(val activity: HomeActivity) {
         val ch = list[i]
         current = ch
         prefs.edit().putString("last", ch.key).apply()
-        preview.play(ch, !soundOn)
+        if (CocukKilidi.kanalKilitli(this, ch)) preview.stop()
+        else if (!koruyucuAcik) preview.play(ch, !soundOn)
         refreshEpg()
     }
 
@@ -979,6 +1005,7 @@ class LauncherState(val activity: HomeActivity) {
             return
         }
         moving = null
+        kilitOturumu = false
         row = 1
         col = 0
     }
@@ -1016,6 +1043,8 @@ class LauncherState(val activity: HomeActivity) {
 
     fun onStop() {
         visibleNow = false
+        panelAcik = false
+        koruyucuAcik = false
         hideNotice()
         preview.stop()
     }
