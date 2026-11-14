@@ -1,0 +1,85 @@
+sha=1ffbd1586f194caa7a099213f805c8256d5f99ea
+build=success
+release=success
+---- errors
+---- tail
+w: file:///home/runner/work/eymenostv/eymenostv/tv/src/main/java/com/eymen/os/Kumanda.kt:12:28 'val connectionInfo: WifiInfo!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/eymenostv/eymenostv/tv/src/main/java/com/eymen/os/Kumanda.kt:12:43 'val ipAddress: Int' is deprecated. Deprecated in Java.
+
+> Task :tv:compileReleaseJavaWithJavac
+> Task :tv:mergeReleaseGeneratedProguardFiles
+> Task :tv:processReleaseJavaRes
+> Task :tv:expandReleaseArtProfileWildcards
+> Task :tv:mergeReleaseJavaResource
+> Task :tv:minifyReleaseWithR8
+> Task :tv:compileReleaseArtProfile
+> Task :tv:shrinkReleaseRes
+> Task :tv:optimizeReleaseResources
+> Task :tv:packageRelease
+> Task :tv:createReleaseApkListingFileRedirect
+> Task :tv:assembleRelease
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/build-1794628046656.json
+
+BUILD SUCCESSFUL in 2m 33s
+47 actionable tasks: 47 executed
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :telefon:preBuild UP-TO-DATE
+> Task :telefon:preReleaseBuild UP-TO-DATE
+> Task :telefon:mergeReleaseJniLibFolders
+> Task :telefon:mergeReleaseNativeLibs NO-SOURCE
+> Task :telefon:stripReleaseDebugSymbols NO-SOURCE
+> Task :telefon:extractReleaseNativeSymbolTables NO-SOURCE
+> Task :telefon:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :telefon:checkReleaseDuplicateClasses
+> Task :telefon:buildKotlinToolingMetadata
+> Task :telefon:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :telefon:checkReleaseAarMetadata
+> Task :telefon:generateReleaseResValues
+> Task :telefon:mapReleaseSourceSetPaths
+> Task :telefon:generateReleaseResources
+> Task :telefon:packageReleaseResources
+> Task :telefon:createReleaseCompatibleScreenManifests
+> Task :telefon:extractDeepLinksRelease
+> Task :telefon:mergeReleaseResources
+> Task :telefon:parseReleaseLocalResources
+> Task :telefon:processReleaseMainManifest
+> Task :telefon:processReleaseManifest
+> Task :telefon:javaPreCompileRelease
+> Task :telefon:desugarReleaseFileDependencies
+> Task :telefon:mergeReleaseStartupProfile
+> Task :telefon:processReleaseManifestForPackage
+> Task :telefon:mergeReleaseArtProfile
+> Task :telefon:mergeReleaseShaders
+> Task :telefon:compileReleaseShaders NO-SOURCE
+> Task :telefon:generateReleaseAssets UP-TO-DATE
+> Task :telefon:mergeReleaseAssets
+> Task :telefon:processReleaseResources
+> Task :telefon:extractReleaseVersionControlInfo
+> Task :telefon:compressReleaseAssets
+> Task :telefon:mergeExtDexRelease
+> Task :telefon:collectReleaseDependencies
+> Task :telefon:sdkReleaseDependencyData
+> Task :telefon:optimizeReleaseResources
+> Task :telefon:validateSigningRelease
+> Task :telefon:writeReleaseAppMetadata
+> Task :telefon:writeReleaseSigningConfigVersions
+
+> Task :telefon:compileReleaseKotlin
+w: file:///home/runner/work/eymenostv/eymenostv/telefon/src/main/java/com/eymen/kurulum/MainActivity.kt:301:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Please add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/runner/work/eymenostv/eymenostv/telefon/src/main/java/com/eymen/kurulum/MainActivity.kt:316:15 'fun onBackPressed(): Unit' is deprecated. Deprecated in Java.
+
+> Task :telefon:compileReleaseJavaWithJavac NO-SOURCE
+> Task :telefon:dexBuilderRelease
+> Task :telefon:mergeReleaseGlobalSynthetics
+> Task :telefon:processReleaseJavaRes
+> Task :telefon:mergeReleaseJavaResource
+> Task :telefon:mergeDexRelease
+> Task :telefon:compileReleaseArtProfile
+> Task :telefon:packageRelease
+> Task :telefon:createReleaseApkListingFileRedirect
+> Task :telefon:assembleRelease
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/build-1794628196882.json
+
+BUILD SUCCESSFUL in 22s
+40 actionable tasks: 40 executed
