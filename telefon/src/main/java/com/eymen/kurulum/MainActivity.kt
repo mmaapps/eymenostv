@@ -20,6 +20,10 @@ class MainActivity : Activity() {
     private var kurulumVar = false
     private var hizliIste = false
     private lateinit var kok: LinearLayout
+    private var ayriEkran = 0
+    private var eskiGorunum: View? = null
+    private var kumandaEkrani: KumandaEkrani? = null
+    private var yedekEkrani: YedekEkrani? = null
     private val zemin = Color.parseColor("#0A1224")
     private val kart = Color.parseColor("#17213D")
     private val altin = Color.parseColor("#E8C27A")
@@ -243,6 +247,8 @@ class MainActivity : Activity() {
                 runOnUiThread { cikti.text = c }
             }
         }
+        dugme("Kumanda") { kumandaAc() }
+        dugme("Yedek", false) { yedekAc() }
         dugme("Hızlı güncelle") { hizli() }
         dugme("Ana ekranı EYMEN OS yap") { calistir { tv.anaEkraniOnar() } }
         dugme("Durumu kontrol et", false) { calistir { tv.durum() } }
@@ -263,6 +269,51 @@ class MainActivity : Activity() {
         }
         ekle(cikti)
         dugme("TV'ye bağlan") { kurulumVar = true; baglanti() }
+    }
+
+    private fun eskiyiSakla() {
+        if (eskiGorunum == null) {
+            val root = findViewById<android.view.ViewGroup>(android.R.id.content)
+            eskiGorunum = root.getChildAt(0)
+        }
+    }
+
+    private fun kumandaAc() {
+        eskiyiSakla()
+        kumandaEkrani?.kapat()
+        yedekEkrani?.kapat()
+        ayriEkran = 1
+        val ekran = KumandaEkrani(this, tv, { onBackPressed() }, { yedekAc() })
+        kumandaEkrani = ekran
+        setContentView(ekran.gorunum())
+    }
+
+    private fun yedekAc() {
+        eskiyiSakla()
+        kumandaEkrani?.kapat()
+        yedekEkrani?.kapat()
+        ayriEkran = 2
+        val ekran = YedekEkrani(this, tv, { onBackPressed() }, { kumandaAc() })
+        yedekEkrani = ekran
+        setContentView(ekran.gorunum())
+    }
+
+    override fun onBackPressed() {
+        if (ayriEkran != 0) {
+            ayriEkran = 0
+            kumandaEkrani?.kapat()
+            yedekEkrani?.kapat()
+            kumandaEkrani = null
+            yedekEkrani = null
+            val view = eskiGorunum
+            if (view != null) {
+                (view.parent as? android.view.ViewGroup)?.removeView(view)
+                setContentView(view)
+                komutlar()
+            }
+            return
+        }
+        super.onBackPressed()
     }
 
     // ------------------------------------------------------- parçalar
