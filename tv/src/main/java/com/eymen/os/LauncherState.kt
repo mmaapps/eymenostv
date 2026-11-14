@@ -888,14 +888,24 @@ class LauncherState(val activity: HomeActivity) {
             noticeKey(code)
             return true
         }
+        if (pinIstek != null) return CocukKilidi.pinKey(this, code)
+        if (koruyucuAcik) return EkranKoruyucu.key(this, code)
         if (qrOpen) {
             if (isOk(code) || code == KeyEvent.KEYCODE_BACK) qrOpen = false
             return true
         }
+        if (panelAcik) return HizliPanel.key(this, code)
+        sonTus = System.currentTimeMillis()
         when (screen) {
             Screen.HUB -> return hubKey(code)
             Screen.YANSITMA -> return yansitmaKey(code)
             Screen.GELISMIS -> return gelKey(code)
+            Screen.KILIT -> return CocukKilidi.key(this, code)
+            Screen.SISTEM -> return Sistem.key(this, code)
+            Screen.KORUYUCU_AYAR -> return EkranKoruyucu.ayarKey(this, code)
+            Screen.USB -> return UsbMedya.key(this, code)
+            Screen.YEDEK -> return YedekMenusu.key(this, code)
+            Screen.KUMANDA -> return KumandaBilgi.key(this, code)
             Screen.UPDATE -> return updateKey(code)
             Screen.ABOUT -> {
                 if (isOk(code) || code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU) screen = Screen.HUB
@@ -915,6 +925,11 @@ class LauncherState(val activity: HomeActivity) {
                 code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU -> closeSetup()
                 else -> return false
             }
+            return true
+        }
+        if (screen == Screen.HOME && moving == null && code == KeyEvent.KEYCODE_PROG_BLUE) {
+            panelAcik = true
+            panelIndex = 0
             return true
         }
         val mv = moving
