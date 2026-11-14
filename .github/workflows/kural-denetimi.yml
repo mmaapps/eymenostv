@@ -1,0 +1,17 @@
+name: Kural denetimi
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  denetim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Şartname ve korunan kod denetimi
+        run: python3 .github/kurallar/denetle.py

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Ayarlar — Gelişmiş</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Sora:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#E8C27A}a:hover{color:#F2D9A6}
+.tile{background:#101A33;border:1px solid #26324F;border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;font:inherit;color:inherit;text-align:left;cursor:pointer;position:relative}
+.ic{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center}
+.tt{display:block;font-family:'Sora',sans-serif;font-size:19px;font-weight:600;color:#F2F4F8}
+.tv{display:block;font-size:14px;font-weight:600;color:#C9D0DD;margin-top:3px}
+.row{display:flex;align-items:center;height:40px;border-top:1px solid #26324F;font-size:14px}
+.k{flex:1;color:#A3ACBF;font-weight:600}
+</style>
+</helmet>
+<div style="width:1280px;height:720px;box-sizing:border-box;padding:28px 64px 18px;display:flex;flex-direction:column;gap:14px;font-family:'Manrope',sans-serif;color:#F2F4F8;background:radial-gradient(120% 120% at 85% 0%,#14204A 0%,#070B16 55%,#05080F 100%)">
+  <div style="height:48px;display:flex;align-items:center;gap:12px">
+    <div style="width:36px;height:36px;border-radius:10px;background:#E8C27A;color:#1E1505;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:700;font-size:20px">E</div>
+    <div style="font-family:'Sora',sans-serif;font-size:30px;font-weight:600">Ayarlar</div>
+    <nav aria-label="Ayar sekmeleri" style="display:flex;gap:6px;margin-left:18px;padding:4px;border-radius:999px;background:#0F1830;border:1px solid #26324F">
+      <a href="Main.dc.html" style="text-decoration:none;padding:7px 18px;border-radius:999px;color:#F2F4F8;font-weight:800;font-size:14px">Temel</a>
+      <a href="Gelismis.dc.html" style="text-decoration:none;padding:7px 18px;border-radius:999px;background:#E8C27A;color:#1E1505;font-weight:800;font-size:14px">Gelişmiş</a>
+    </nav>
+    <div style="flex:1"></div>
+    <div style="font-size:14px;color:#A3ACBF;font-weight:500">Cumartesi, 14 Kasım</div>
+    <div style="font-family:'Sora',sans-serif;font-size:26px;font-weight:500;margin-left:14px">21:40</div>
+  </div>
+
+  <div style="flex:1;display:flex;gap:20px;min-height:0">
+    <div style="width:333px;box-sizing:border-box;background:#101A33;border:1px solid #26324F;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:92px;height:92px;border-radius:50%;box-sizing:border-box;border:7px solid #26324F;border-top-color:#6FA8FF;border-right-color:#6FA8FF;display:flex;align-items:center;justify-content:center">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#6FA8FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:800;color:#6FA8FF;letter-spacing:1.2px">BU TV'DE BULUNANLAR</div>
+          <div style="font-family:'Sora',sans-serif;font-size:22px;font-weight:600;line-height:28px">Açılışta otomatik tarandı</div>
+        </div>
+      </div>
+      <div>
+        <div class="row"><span class="k">Ekran yansıtma</span><b style="color:#7BE08A">Hazır</b></div>
+        <div class="row"><span class="k">USB bellek</span><b>Takılı değil</b></div>
+        <div class="row"><span class="k">Çocuk kilidi</span><b>Kapalı</b></div>
+        <div class="row"><span class="k">Hızlı mod</span><b style="color:#7BE08A">Açık</b></div>
+        <div class="row"><span class="k">Son yedek</span><b>Yok</b></div>
+      </div>
+      <div style="flex:1"></div>
+      <div style="display:flex;align-items:center;gap:8px;background:#17213D;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600;color:#C9D0DD"><span style="width:8px;height:8px;border-radius:4px;background:#6FA8FF"></span>Bulunmayan özelliğin kartı gizlenir</div>
+    </div>
+
+    <div style="flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:14px">
+      <a href="Yansitma.dc.html" class="tile" style="text-decoration:none;background:#F2F4F8;border:3px solid #6FA8FF;box-shadow:0 14px 36px rgba(0,0,0,.55);transform:scale(1.03)">
+        <span style="display:flex;justify-content:space-between;align-items:flex-start">
+          <span class="ic" style="background:#6FA8FF"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A1224" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><path d="M2 20h.01"/></svg></span>
+          <span style="background:#1B7A33;color:#FFFFFF;font-size:10px;font-weight:800;letter-spacing:.6px;padding:4px 8px;border-radius:999px">OTOMATİK ALGILANDI</span>
+        </span>
+        <span><span class="tt" style="color:#0A1224">Ekran Yansıtma</span><span class="tv" style="color:#3A4459">Hazır · telefondan bağlan</span></span>
+      </a>
+      <button class="tile">
+        <span class="ic" style="background:#F5B85C"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A1224" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+        <span><span class="tt">Hızlı panel</span><span class="tv">Mavi tuşla aç</span></span>
+      </button>
+      <button class="tile">
+        <span class="ic" style="background:#FF9A9A"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A1224" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+        <span><span class="tt">Çocuk kilidi</span><span class="tv">Kapalı</span></span>
+      </button>
+      <button class="tile">
+        <span class="ic" style="background:#A9B2FF"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A1224" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+        <span><span class="tt">Ekran koruyucu</span><span class="tv">10 dakika sonra</span></span>
+      </button>
+      <button class="tile">
+        <span class="ic" style="background:#8FD3A8"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A1224" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 11l4 2-4 2z"/></svg></span>
+        <span><span class="tt">USB medya</span><span class="tv">Takınca kendisi açılır</span></span>
+      </button>
+      <button class="tile">
+        <span class="ic" style="background:#7FD8F0"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A1224" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></span>
+        <span><span class="tt">Sistem araçları</span><span class="tv">Temizle · hız testi</span></span>
+      </button>
+      <button class="tile">
+        <span class="ic" style="background:#C6E27A"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A1224" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 14l4-4"/><path d="M3.3 19a10 10 0 1 1 17.4 0"/></svg></span>
+        <span><span class="tt">Hız ve performans</span><span class="tv">Hızlı mod açık</span></span>
+      </button>
+      <button class="tile">
+        <span class="ic" style="background:#9CC3FF"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A1224" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H7a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 11a4 4 0 0 1-2 8z"/><path d="M12 18v-6M9 15l3-3 3 3"/></svg></span>
+        <span><span class="tt">Yedekle ve geri yükle</span><span class="tv">Telefona yedekle</span></span>
+      </button>
+      <button class="tile">
+        <span class="ic" style="background:#E6A8FF"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A1224" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></span>
+        <span><span class="tt">Telefondan kumanda</span><span class="tv">TV adresini göster</span></span>
+      </button>
+    </div>
+  </div>
+
+  <div style="height:24px;display:flex;align-items:center;gap:16px;font-size:13px;font-weight:600;color:#A3ACBF">
+    <span style="flex:1;font-size:14px;font-weight:700;color:#F2F4F8">TV'nin yansıtma özelliğini açar. Telefonun ekranını TV'ye yansıtırsın.</span>
+    <span>▲ sekmeler</span><span>OK aç</span><span>Geri: ana ekran</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
