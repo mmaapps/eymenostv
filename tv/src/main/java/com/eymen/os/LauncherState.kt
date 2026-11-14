@@ -58,6 +58,11 @@ class LauncherState(val activity: HomeActivity) {
     /** Which list the plain settings screen shows: start-up settings or hidden apps. */
     var setupApps by mutableStateOf(false)
     var hubIndex by mutableStateOf(0)
+    var gelIndex by mutableStateOf(0)
+    var sekmeOdak by mutableStateOf(false)
+    var yansitma by mutableStateOf(YansitmaSonuc.kayit(prefs.getString("yansitmaSonuc", null)))
+    var yansitmaOdak by mutableStateOf(0)
+    var yansitmaTur by mutableStateOf(0)
     var online by mutableStateOf(false)
     val updates = UpdateManager(ctx, prefs, scope)
     var updateRow by mutableStateOf(0)
@@ -116,6 +121,7 @@ class LauncherState(val activity: HomeActivity) {
             }
         }
         reloadApps()
+        taraYansitma()
         inputs.clear()
         inputs.addAll(Channels.inputs(ctx))
         scope.launch {
@@ -144,6 +150,51 @@ class LauncherState(val activity: HomeActivity) {
             if (seen.isNotEmpty()) toast("EYMEN OS ${BuildConfig.VERSION_NAME} sürümüne güncellendi", 7000L)
             prefs.edit().putString("seenVersion", BuildConfig.VERSION_NAME).apply()
         }
+    }
+
+    /** Rechecks the TV's built-in screen mirroring receivers. */
+    fun taraYansitma() {
+        scope.launch {
+            val sonuc = Yansitma.tara(ctx)
+            yansitma = sonuc
+            prefs.edit().putString("yansitmaSonuc", sonuc.json()).apply()
+        }
+    }
+
+    /** Uses the original protected launch flow to suspend the live preview. */
+    fun openMirrorIntent(intent: Intent) {
+        launch(intent)
+    }
+
+    private fun yansitmaKey(code: Int): Boolean {
+        when {
+            code == KeyEvent.KEYCODE_DPAD_UP -> yansitmaOdak = 3
+            code == KeyEvent.KEYCODE_DPAD_DOWN -> yansitmaOdak = 0
+            code == KeyEvent.KEYCODE_DPAD_LEFT -> {
+                if (yansitmaOdak == 4) yansitmaTur = 0
+                else yansitmaOdak = (yansitmaOdak - 1).coerceAtLeast(0)
+            }
+            code == KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                if (yansitmaOdak == 4) yansitmaTur = 1
+                else yansitmaOdak = if (yansitmaOdak >= 2) 4 else yansitmaOdak + 1
+            }
+            isOk(code) -> when (yansitmaOdak) {
+                0 -> Yansitma.ac(this)
+                1 -> {
+                    val yeni = !prefs.getBoolean("yansitmaKisayol", false)
+                    prefs.edit().putBoolean("yansitmaKisayol", yeni).apply()
+                    refreshKey++
+                }
+                2 -> taraYansitma()
+                3 -> Yansitma.adiDegistir(this)
+            }
+            code == KeyEvent.KEYCODE_BACK -> {
+                screen = Screen.GELISMIS
+                gelIndex = 0
+            }
+            else -> return false
+        }
+        return true
     }
 
     // ------------------------------------------------------------ updates
@@ -671,6 +722,7 @@ class LauncherState(val activity: HomeActivity) {
         }
         when (screen) {
             Screen.HUB -> return hubKey(code)
+            Screen.YANSITMA -> return yansitmaKey(code)
             Screen.UPDATE -> return updateKey(code)
             Screen.ABOUT -> {
                 if (isOk(code) || code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU) screen = Screen.HUB
