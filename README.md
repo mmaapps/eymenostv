@@ -12,4 +12,8 @@ Philips 65PUS7009/62 içindeki Vestel 17MB170 anakart (Android 11) için ana ekr
 
 TV açılışta, internete bağlanınca ve 6 saatte bir GitHub'a bakar. Yeni sürüm bulunca indirir, ana ekranda imzalı uyarıyı gösterir ve TV'nin kendi hata ayıklama bağlantısıyla kurar. Bu bağlantı açılmazsa Android'in kurulum ekranı çıkar.
 
+## Geliştirme kuralları
+
+Bu depoda kod yazan her yapay zekâ ve geliştirici önce `AGENTS.md` dosyasını okur. 1.2.0 sürümünün tek kaynağı `docs/1.2/SARTNAME.md` ve `docs/1.2/tasarim/` klasörüdür. Kurallara uymayan değişikliği GitHub'daki kural denetimi durdurur.
+
 Atasoy Yazılım · atasoyyazilim.com
