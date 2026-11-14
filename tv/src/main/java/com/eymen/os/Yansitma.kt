@@ -3,6 +3,9 @@ package com.eymen.os
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas as AndroidCanvas
+import android.graphics.Paint
 import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.Canvas
@@ -31,6 +34,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.vector.PathParser
@@ -120,6 +124,31 @@ object Yansitma {
             false
         }
         YansitmaSonuc(donanim, uygulama, menu, google)
+    }
+
+    /** Draws the approved 160 px cast shortcut without an image asset. */
+    fun ikonBitmap(): Bitmap {
+        val bitmap = Bitmap.createBitmap(160, 160, Bitmap.Config.ARGB_8888)
+        val canvas = AndroidCanvas(bitmap)
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.rgb(111, 168, 255)
+            style = Paint.Style.FILL
+        }
+        canvas.drawRoundRect(0f, 0f, 160f, 160f, 36f, 36f, fill)
+        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.rgb(10, 18, 36)
+            style = Paint.Style.STROKE
+            strokeWidth = 2.4f
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+        val path = PathParser().parsePathString(SIMGE).toPath().asAndroidPath()
+        canvas.save()
+        canvas.translate(30f, 30f)
+        canvas.scale(100f / 24f, 100f / 24f)
+        canvas.drawPath(path, stroke)
+        canvas.restore()
+        return bitmap
     }
 
     fun cihazAdi(ctx: Context): String = try {
