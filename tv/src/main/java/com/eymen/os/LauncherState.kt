@@ -31,6 +31,8 @@ import java.text.Collator
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlin.math.max
 
 class LauncherState(val activity: HomeActivity) {
@@ -98,6 +100,21 @@ class LauncherState(val activity: HomeActivity) {
     // ------------------------------------------------------------ loading
 
     fun start() {
+        if (prefs.getBoolean("hizliAcilis", true)) {
+            try {
+                val kayit = JSONArray(prefs.getString("uygulamaListesi", "[]") ?: "[]")
+                val liste = ArrayList<AppEntry>()
+                for (i in 0 until kayit.length()) {
+                    val item = kayit.optJSONObject(i) ?: continue
+                    val pkg = item.optString("p")
+                    val label = item.optString("l")
+                    if (pkg.isNotBlank() && label.isNotBlank()) liste.add(AppEntry(pkg, label))
+                }
+                apps.clear()
+                apps.addAll(liste)
+            } catch (_: Exception) {
+            }
+        }
         reloadApps()
         inputs.clear()
         inputs.addAll(Channels.inputs(ctx))
@@ -328,6 +345,12 @@ class LauncherState(val activity: HomeActivity) {
                 val rb = rank[b.pkg] ?: Int.MAX_VALUE
                 if (ra != rb) ra.compareTo(rb) else collator.compare(a.label, b.label)
             }
+            try {
+                val kayit = JSONArray()
+                for (a in sorted) kayit.put(JSONObject().put("p", a.pkg).put("l", a.label))
+                prefs.edit().putString("uygulamaListesi", kayit.toString()).apply()
+            } catch (_: Exception) {
+            }
             val old = apps.associateBy { it.pkg }
             apps.clear()
             for (a in sorted) {
@@ -391,7 +414,9 @@ class LauncherState(val activity: HomeActivity) {
         if (ch.logoRequested) return
         ch.logoRequested = true
         scope.launch {
-            val bmp = withContext(Dispatchers.IO) { Logos.load(ctx, ch) }
+            val bmp = withContext(Dispatchers.IO) {
+                IkonOnbellegi.logo(ctx, ch, prefs.getBoolean("hizliAcilis", true))
+            }
             if (bmp != null) ch.logo = bmp.asImageBitmap()
         }
     }
@@ -400,7 +425,9 @@ class LauncherState(val activity: HomeActivity) {
         if (app.requested) return
         app.requested = true
         scope.launch {
-            val (banner, icon) = withContext(Dispatchers.IO) { Apps.graphics(ctx, app.pkg) }
+            val (banner, icon) = withContext(Dispatchers.IO) {
+                IkonOnbellegi.graphics(ctx, app.pkg, prefs.getBoolean("hizliAcilis", true))
+            }
             if (banner != null) app.banner = banner.asImageBitmap()
             if (icon != null) app.icon = icon.asImageBitmap()
         }
