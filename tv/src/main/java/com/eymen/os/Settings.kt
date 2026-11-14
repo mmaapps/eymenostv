@@ -147,6 +147,7 @@ fun HubScreen(s: LauncherState) {
             Row(Modifier.height(48.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 BrandMark(36)
                 T("Ayarlar", 30, C.Fg, 600, display = true)
+                AyarSekmeleri(s, false)
                 Spacer(Modifier.weight(1f))
                 T(s.dateLabel(s.now), 14, C.Mut, 500)
                 T(s.time(s.now), 26, C.Fg, 500, display = true)
@@ -166,6 +167,7 @@ fun HubScreen(s: LauncherState) {
             }
             Row(Modifier.height(24.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 T(cards[focus].help, 14, C.Fg, 700, modifier = Modifier.weight(1f))
+                T("▲ sekmeler", 13, C.Mut, 600)
                 T("OK aç", 13, C.Mut, 600)
                 T("Geri: ana ekran", 13, C.Mut, 600)
             }
@@ -207,14 +209,24 @@ private fun StatusPanel(s: LauncherState, waiting: Boolean) {
             Pair("Son kontrol", if (checked > 0L) s.time(checked) else "Henüz yok"),
             Pair("İnternet", if (s.online) "Bağlı" else "Yok"),
             Pair("Kanal", "${s.channelCount()}"),
+            Pair("Ekran yansıtma", if (s.yansitma?.hazir == true) "Hazır" else "Bu TV'de yok"),
             Pair("TV", Build.MODEL ?: "")
         )
         Column {
             rows.forEach { row ->
-                Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF26324F)))
-                Row(Modifier.fillMaxWidth().height(40.dp), verticalAlignment = Alignment.CenterVertically) {
+                val yansitmaSatiri = row.first == "Ekran yansıtma"
+                if (!yansitmaSatiri) Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF26324F)))
+                Row(
+                    Modifier.fillMaxWidth().height(40.dp)
+                        .then(if (yansitmaSatiri) Modifier.panel(Color(0xFF13224A), 8)
+                            .padding(horizontal = 8.dp) else Modifier),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (yansitmaSatiri) GelIkon(Yansitma.SIMGE, 16, Color(0xFF6FA8FF))
                     T(row.first, 14, C.Mut, 600, modifier = Modifier.weight(1f))
-                    T(row.second, 14, C.Fg, 800)
+                    T(row.second, 14,
+                        if (yansitmaSatiri && s.yansitma?.hazir == true) C.Mint else C.Fg, 800)
                 }
             }
         }
