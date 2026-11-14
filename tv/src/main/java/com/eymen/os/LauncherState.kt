@@ -63,6 +63,10 @@ class LauncherState(val activity: HomeActivity) {
     var yansitma by mutableStateOf(YansitmaSonuc.kayit(prefs.getString("yansitmaSonuc", null)))
     var yansitmaOdak by mutableStateOf(0)
     var yansitmaTur by mutableStateOf(0)
+    var yansitmaKisayol by mutableStateOf(prefs.getBoolean("yansitmaKisayol", false))
+    var usbVar by mutableStateOf(false)
+    var panelAcik by mutableStateOf(false)
+    var panelIndex by mutableStateOf(0)
     var online by mutableStateOf(false)
     val updates = UpdateManager(ctx, prefs, scope)
     var updateRow by mutableStateOf(0)
@@ -183,7 +187,7 @@ class LauncherState(val activity: HomeActivity) {
                 1 -> {
                     val yeni = !prefs.getBoolean("yansitmaKisayol", false)
                     prefs.edit().putBoolean("yansitmaKisayol", yeni).apply()
-                    refreshKey++
+                    yansitmaKisayol = yeni
                 }
                 2 -> taraYansitma()
                 3 -> Yansitma.adiDegistir(this)
@@ -351,13 +355,72 @@ class LauncherState(val activity: HomeActivity) {
     }
 
     private fun hubKey(code: Int): Boolean {
+        if (sekmeOdak) {
+            when {
+                code == KeyEvent.KEYCODE_DPAD_RIGHT -> openGelismis()
+                code == KeyEvent.KEYCODE_DPAD_LEFT -> screen = Screen.HUB
+                code == KeyEvent.KEYCODE_DPAD_DOWN -> { sekmeOdak = false; hubIndex = 0 }
+                isOk(code) -> {}
+                code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU ||
+                    code == KeyEvent.KEYCODE_SETTINGS -> closeHub()
+                else -> return false
+            }
+            return true
+        }
         when {
             code == KeyEvent.KEYCODE_DPAD_LEFT -> if (hubIndex % 3 > 0) hubIndex -= 1
             code == KeyEvent.KEYCODE_DPAD_RIGHT -> if (hubIndex % 3 < 2) hubIndex += 1
-            code == KeyEvent.KEYCODE_DPAD_UP -> if (hubIndex >= 3) hubIndex -= 3
+            code == KeyEvent.KEYCODE_DPAD_UP -> {
+                if (hubIndex < 3) sekmeOdak = true else hubIndex -= 3
+            }
             code == KeyEvent.KEYCODE_DPAD_DOWN -> if (hubIndex < 6) hubIndex += 3
             isOk(code) -> hubAction(hubIndex)
-            code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU || code == KeyEvent.KEYCODE_SETTINGS -> closeHub()
+            code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU ||
+                code == KeyEvent.KEYCODE_SETTINGS -> closeHub()
+            else -> return false
+        }
+        return true
+    }
+
+    fun openGelismis() {
+        screen = Screen.GELISMIS
+        prefs.edit().putBoolean("gelismisGoruldu", true).apply()
+        taraYansitma()
+    }
+
+    private fun gelKey(code: Int): Boolean {
+        if (sekmeOdak) {
+            when {
+                code == KeyEvent.KEYCODE_DPAD_LEFT -> screen = Screen.HUB
+                code == KeyEvent.KEYCODE_DPAD_RIGHT || isOk(code) -> {}
+                code == KeyEvent.KEYCODE_DPAD_DOWN -> { sekmeOdak = false; gelIndex = 0 }
+                code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU ||
+                    code == KeyEvent.KEYCODE_SETTINGS -> closeHub()
+                else -> return false
+            }
+            return true
+        }
+        val kartlar = gelKartlar(this)
+        when {
+            code == KeyEvent.KEYCODE_DPAD_LEFT -> if (gelIndex % 3 > 0) gelIndex--
+            code == KeyEvent.KEYCODE_DPAD_RIGHT -> if (gelIndex % 3 < 2 &&
+                gelIndex + 1 < kartlar.size) gelIndex++
+            code == KeyEvent.KEYCODE_DPAD_UP -> {
+                if (gelIndex < 3) sekmeOdak = true else gelIndex -= 3
+            }
+            code == KeyEvent.KEYCODE_DPAD_DOWN -> if (gelIndex + 3 < kartlar.size) gelIndex += 3
+            isOk(code) -> when (kartlar.getOrNull(gelIndex)?.id) {
+                0 -> { yansitmaOdak = 0; screen = Screen.YANSITMA }
+                1 -> { closeHub(); panelAcik = true; panelIndex = 0 }
+                2 -> screen = Screen.KILIT
+                3 -> screen = Screen.KORUYUCU_AYAR
+                4 -> screen = Screen.USB
+                5, 6 -> screen = Screen.SISTEM
+                7 -> screen = Screen.YEDEK
+                8 -> screen = Screen.KUMANDA
+            }
+            code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU ||
+                code == KeyEvent.KEYCODE_SETTINGS -> closeHub()
             else -> return false
         }
         return true
@@ -723,6 +786,7 @@ class LauncherState(val activity: HomeActivity) {
         when (screen) {
             Screen.HUB -> return hubKey(code)
             Screen.YANSITMA -> return yansitmaKey(code)
+            Screen.GELISMIS -> return gelKey(code)
             Screen.UPDATE -> return updateKey(code)
             Screen.ABOUT -> {
                 if (isOk(code) || code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU) screen = Screen.HUB
