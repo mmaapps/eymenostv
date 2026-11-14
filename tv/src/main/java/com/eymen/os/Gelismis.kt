@@ -250,3 +250,127 @@ fun GelismisScreen(s: LauncherState) {
         }
     }
 }
+
+/** One focusable row in the approved settings list template. */
+data class GelSatir(
+    val baslik: String,
+    val alt: String,
+    val deger: String = "",
+    val anahtar: Boolean? = null,
+)
+
+@Composable
+fun GelListeEkrani(
+    s: LauncherState,
+    baslik: String,
+    ikon: String,
+    alt: String,
+    satirlar: List<GelSatir>,
+    secim: Int,
+    yardim: String = "OK seç",
+    solEk: String = "",
+) {
+    val index = secim.coerceIn(0, (satirlar.size - 1).coerceAtLeast(0))
+    val first = (index - 3).coerceAtLeast(0).coerceAtMost((satirlar.size - 7).coerceAtLeast(0))
+    Box(
+        Modifier.fillMaxSize().background(
+            Brush.radialGradient(
+                listOf(Color(0xFF14204A), Color(0xFF070B16), C.Ink),
+                center = Offset(1050f, 0f), radius = 1600f,
+            )
+        )
+    ) {
+        Column(
+            Modifier.fillMaxSize().padding(start = 64.dp, end = 64.dp, top = 28.dp, bottom = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            Row(Modifier.height(48.dp), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(Modifier.size(36.dp).panel(C.Gold, 10), contentAlignment = Alignment.Center) {
+                    T("E", 20, C.GoldInk, 700, display = true)
+                }
+                T(baslik, 30, C.Fg, 600, display = true)
+                T("Ayarlar › Gelişmiş", 13, C.Mut, 600, modifier = Modifier.padding(start = 12.dp))
+                Spacer(Modifier.weight(1f))
+                T(s.dateLabel(s.now), 14, C.Mut, 500)
+                T(s.time(s.now), 26, C.Fg, 500, display = true)
+            }
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                Column(
+                    Modifier.width(380.dp).fillMaxHeight()
+                        .panel(Color(0xFF101A33), 18, Color(0xFF26324F))
+                        .padding(26.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                ) {
+                    Box(Modifier.size(84.dp).panel(Color(0xFF26324F), 22),
+                        contentAlignment = Alignment.Center) {
+                        GelIkon(ikon, 44, C.Gold)
+                    }
+                    T(baslik, 28, C.Fg, 600, display = true, maxLines = 2, lineHeight = 34)
+                    T(alt, 16, C.Fg2, 600, maxLines = 4, lineHeight = 23)
+                    if (solEk.isNotBlank()) {
+                        Box(Modifier.fillMaxWidth().panel(C.Tile, 12).padding(16.dp)) {
+                            T(solEk, 16, C.Fg2, 700, maxLines = 6, lineHeight = 23)
+                        }
+                    }
+                }
+                Column(
+                    Modifier.weight(1f).fillMaxHeight()
+                        .panel(Color(0xFF101A33), 18, Color(0xFF26324F))
+                        .padding(horizontal = 18.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (satirlar.isEmpty()) {
+                        T("Bu bölümde dosya yok", 16, C.Mut, 700)
+                    } else {
+                        for (i in first until (first + 7).coerceAtMost(satirlar.size)) {
+                            val item = satirlar[i]
+                            val focused = index == i
+                            Row(
+                                Modifier.fillMaxWidth().height(62.dp)
+                                    .then(
+                                        if (focused) Modifier.shadow(24.dp, RoundedCornerShape(12.dp)) else Modifier
+                                    )
+                                    .panel(
+                                        if (focused) C.Fg else Color(0xFF101A33), 12,
+                                        if (focused) C.Fg else Color(0xFF26324F),
+                                    )
+                                    .padding(horizontal = 18.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                    T(item.baslik, 16, if (focused) C.Navy else C.Fg, 800, maxLines = 1)
+                                    T(item.alt, 13, if (focused) C.FocusSub else C.Mut, 600, maxLines = 1)
+                                }
+                                if (item.anahtar != null) {
+                                    Box(
+                                        Modifier.size(48.dp, 28.dp)
+                                            .panel(if (item.anahtar) Color(0xFF1B7A33) else Color(0xFF3A4459), 999),
+                                        contentAlignment = if (item.anahtar) Alignment.CenterEnd else Alignment.CenterStart,
+                                    ) {
+                                        Box(Modifier.padding(3.dp).size(22.dp).panel(C.Fg, 999))
+                                    }
+                                } else if (item.deger.isNotBlank()) {
+                                    T(item.deger, 18, if (focused) C.Navy else C.Gold, 700,
+                                        display = true, maxLines = 1)
+                                } else {
+                                    T("›", 24, if (focused) C.Navy else C.Fg2, 800)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Row(Modifier.height(24.dp), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                T(yardim, 14, C.Fg, 700, modifier = Modifier.weight(1f), maxLines = 2)
+                T("OK seç", 13, C.Mut, 600)
+                T("Geri: Gelişmiş", 13, C.Mut, 600)
+            }
+        }
+    }
+}
